@@ -3,12 +3,6 @@
 ### Team Members
 
 Aleah Nesmith (aleah9901)
-
-
-
-Some Text
-
-
-
+Stephen Hall (StephenHJSCC)
 Victoria Luna-Carmona (vlunac)
 
