@@ -5,6 +5,7 @@ IDE
 ### Team Members
 Aleah Nesmith (aleah9901)
 Malone, Liam (inkbones)
+Stephen Hall (StephenHJSCC)
 Victoria Luna-Carmona (vlunac)
 Ethan Mooore (MegaMightyena617
 Kaais Taylor (KaaisT05)
