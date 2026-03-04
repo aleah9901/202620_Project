@@ -59,6 +59,11 @@
             width: 300px;
         }
 
+        label {
+            text-align: center;
+            font-family:Arial, sans-serif;
+        }
+
         /* Spinner */
         .spinner {
             border: 6px solid #f3f3f3;
@@ -97,6 +102,12 @@
             CssClass="modalButton"
             OnClick="Process_ZIP"
             OnClientClick="showModal('Uploading file...');" />
+
+        <asp:Label 
+            ID="lblmessage" 
+            runat="server" 
+            style="display:block; margin-top:10px;
+            "/>
 
         <!-- Modal from team 4 -->
         <div id="statusModal" class="modal">
