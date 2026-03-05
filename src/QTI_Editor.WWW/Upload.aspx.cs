@@ -30,12 +30,26 @@ namespace QTI_Editor.WWW
              * If the file does not end in .zip, the program will return with an error message.
              * The error message displays with a label controller on Upload.aspx.
              */
-            string orinialFile = Path.GetFileName(FileUpload1.FileName);
-            if (!orinialFile.EndsWith(".zip"))
+            string originalFile = Path.GetFileName(FileUpload1.FileName);
+            if (!originalFile.EndsWith(".zip"))
             {
                 lblmessage.Text = "Only .zip files are allowed";
                 return ;
             }
+
+            string sessionId = QTI_Editor.WWW.Services.SessionService.GenerateSession();
+            
+            /*
+             * The is method does not work.
+             * Attempted to create a cache folder with generated session
+             * Recieved Server Error
+             * System.UnauthorizedAccessException: Access to the path 'cache\XmOghjDfs20260305_142544' is denied.
+             * Would require user to grant ASP.NET access to a file.
+            
+            string cacheDirectory = ("cache\\" + sessionId);
+            Directory.CreateDirectory(cacheDirectory);
+            */
+            
         }
     }
 }
