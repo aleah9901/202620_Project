@@ -11,34 +11,34 @@ namespace QTI_Editor.WWW
 {
 
 
-    public partial class Upload
+    public partial class Site
     {
 
         /// <summary>
-        /// FileUpload1 control.
+        /// header control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.FileUpload FileUpload1;
+        protected global::System.Web.UI.WebControls.ContentPlaceHolder header;
 
         /// <summary>
-        /// btnUpload control.
+        /// form1 control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Button btnUpload;
+        protected global::System.Web.UI.HtmlControls.HtmlForm form1;
 
         /// <summary>
-        /// lblmessage control.
+        /// MainContent control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Label lblmessage;
+        protected global::System.Web.UI.WebControls.ContentPlaceHolder MainContent;
     }
 }
