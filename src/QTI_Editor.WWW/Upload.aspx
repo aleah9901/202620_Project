@@ -30,7 +30,7 @@
         <asp:Label 
             ID="lblmessage" 
             runat="server" 
-            style="display:block; margin-top:10px;
-            "/>
+            style="display:block; 
+            margin-top:10px;"/>
 
 </asp:Content>
