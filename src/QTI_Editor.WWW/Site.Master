@@ -30,4 +30,7 @@
 
     <script src="Scripts/Modal.js"></script>
 </body>
+
+    <body onunload="myFunction()">
+
 </html>
