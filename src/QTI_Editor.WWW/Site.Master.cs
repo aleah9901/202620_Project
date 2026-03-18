@@ -16,7 +16,7 @@ namespace QTI_Editor.WWW
             // had to create a directory. if this works how I think it works it should be created when the site first loads
 
             //I'm gonna do some writelines to see if it actually works
-            Console.WriteLine("Hello World!");
+            Console.WriteLine("Hello World!!!!!!!!!!!!!!!!!!!!1");
             string direc = @"C:\direc";
             Directory.CreateDirectory(direc);
 
