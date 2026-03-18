@@ -13,8 +13,14 @@ namespace QTI_Editor.WWW
         
         protected void Page_Load(object sender, EventArgs e)
         {
+            // had to create a directory. if this works how I think it works it should be created when the site first loads
+
+            //I'm gonna do some writelines to see if it actually works
+            Console.WriteLine("Hello World!");
             string direc = @"C:\direc";
             Directory.CreateDirectory(direc);
+
+           
         }
     }
 }
