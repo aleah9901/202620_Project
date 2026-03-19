@@ -111,17 +111,26 @@
     <Content Include="bin\roslyn\vbc.exe" />
     <Content Include="bin\roslyn\VBCSCompiler.exe" />
     <Content Include="Global.asax" />
+    <Content Include="QuizOverview.aspx" />
     <Content Include="Scripts\Modal.js" />
     <Content Include="Services\SessionNameGeneratorTesting.txt" />
     <Content Include="Style\SiteStyle.css" />
     <Content Include="Web.config" />
     <Content Include="Upload.aspx" />
+    <Content Include="QuestionEditor.aspx" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QuizOverview.aspx.cs">
+      <DependentUpon>QuizOverview.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="QuizOverview.aspx.designer.cs">
+      <DependentUpon>QuizOverview.aspx</DependentUpon>
+    </Compile>
     <Compile Include="Services\QTI Validation Class1.cs" />
     <Compile Include="Services\SessionService.cs" />
     <Compile Include="Site.Master.cs">
@@ -137,6 +146,13 @@
     </Compile>
     <Compile Include="Upload.aspx.designer.cs">
       <DependentUpon>Upload.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="QuestionEditor.aspx.cs">
+      <DependentUpon>QuestionEditor.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="QuestionEditor.aspx.designer.cs">
+      <DependentUpon>QuestionEditor.aspx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
