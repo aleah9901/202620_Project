@@ -20,7 +20,7 @@
         </main>
     </form>
 
-     <!-- Modal from team 4 -->
+     <%-- Modal from team 4 --%>
      <div id="statusModal" class="modal">
          <div class="modal-content">
              <div class="spinner"></div>
