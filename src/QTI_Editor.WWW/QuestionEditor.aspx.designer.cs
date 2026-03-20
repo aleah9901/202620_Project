@@ -11,7 +11,7 @@ namespace QTI_Editor.WWW
 {
 
 
-    public partial class WebForm1
+    public partial class QuestionEditor
     {
     }
 }
