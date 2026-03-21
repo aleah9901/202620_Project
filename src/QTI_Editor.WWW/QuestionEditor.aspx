@@ -12,12 +12,12 @@ answer is set or if more options are needed.
 
 -->
 
-<%@ Page Title="Question Editor" 
+<%@ Page Title="QuestionEditor" 
     MasterPageFile="~/Site.Master" 
     Language="C#" 
     AutoEventWireup="true" 
     CodeBehind="QuestionEditor.aspx.cs" 
-    Inherits="QTI_Editor.WWW.WebForm1" %>
+    Inherits="QTI_Editor.WWW.QuestionEditor" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <%-- Content for the Question Editor goes here --%>

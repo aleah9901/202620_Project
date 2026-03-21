@@ -14,5 +14,12 @@
 
 <asp:Content ID="Content1" ContentPlaceHolderID="MainContent" runat="server">
     <%-- Content for the Quiz Overview goes here --%>
+     <asp:Button
+      ID="exZipButton"
+      runat="server"
+      Text="Export ZIP file"
+      CssClass="modalButton"
+      OnClientClick="showModal('Exporting file...');" />
+
 
 </asp:Content>
