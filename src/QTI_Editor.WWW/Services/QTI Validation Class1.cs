@@ -16,24 +16,24 @@ namespace QTI_Editor.WWW
 		{
 			QTI_validation_result result = new QTI_validation_result();
 
-			//passed in the folder path
+			result.IsValid = true;
+			result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
 
 			if (string.IsNullOrWhiteSpace(extractedFolderPath))
 			{
-				result.IsValid = false
+				result.IsValid = false;
 				result.Message = "Validation Failed: extracted folder path is empty.";
-				return result;
+				
 			}
 
-			//there is a folder
 			if (!Directory.Exists(extractedFolderPath))
 			{
 				result.IsValid = false;
 				result.Message = "Validation Failed: extracted folder does not exist.";
-				return result;
+				
 			}
 
-			//somewhere in the extracted files is imsmanifest.xml
+			
 			string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml,
 				SearchOption.AllDirectories);
 
@@ -41,10 +41,10 @@ namespace QTI_Editor.WWW
 			{
 				result.IsValid = false;
 				result.Message = "Validation failed: imsmanifest.xml was not found.";
-				return result;
+				
 			}
 
-			//Use the first one
+			
 			string manifestPath = manifestFiles[0];
 			result.ManifestPath = manifestPath;
 
@@ -76,9 +76,8 @@ namespace QTI_Editor.WWW
 			}
 
 			//Validation rules passed
-			result.IsValid = true;
-			result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
-			return result;
+			
+			
 		}
 	}
 }
