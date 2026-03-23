@@ -10,15 +10,18 @@
     <link rel="stylesheet" href="Style/SiteStyle.css" />
 </head>
 <body>
-
-    <header><strong>QTI Editor</strong></header>
-
     <form id="form1" runat="server">
+        <header>
+            <h1><strong>QTI Editor</strong></h1>
+
+            <asp:ContentPlaceHolder ID="HeaderControls" runat="server" />
+        </header>
+
         <main>
             <asp:ContentPlaceHolder ID="MainContent" runat="server">
             </asp:ContentPlaceHolder>
         </main>
-    </form>
+   </form>
 
      <%-- Modal from team 4 --%>
      <div id="statusModal" class="modal">

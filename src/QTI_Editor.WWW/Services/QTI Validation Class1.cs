@@ -34,7 +34,7 @@ namespace QTI_Editor.WWW
 			}
 
 			
-			string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml,
+			string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml",
 				SearchOption.AllDirectories);
 
 			if (manifestFiles.Length == 0)
@@ -53,7 +53,7 @@ namespace QTI_Editor.WWW
 			{
 				XDocument manifestDoc = XDocument.Load(manifestPath);
 
-				if manifestDoc.Root == null)
+				if (manifestDoc.Root == null)
 				{
 					result.IsValid = false;
 					result.Message = "Validation failed: imsmanifest.xml is empty.";
@@ -82,9 +82,3 @@ namespace QTI_Editor.WWW
 	}
 }
 
-
-
-
-
-
-                }
