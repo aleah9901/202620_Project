@@ -54,7 +54,8 @@ namespace QTI_Editor.WWW
                     if (!validationrResult.IsValid)
                     {
                         lblmessage.Text = validationrResult.Message;
-                        Directory.Delete(cacheDirectory, true);
+                        //SessionClean class will exist when merge with Team 2
+                        SessionClean.DeleteSession(cacheDirectory);
                     }
 
                     //Redirects to QuestionOverview
@@ -70,10 +71,8 @@ namespace QTI_Editor.WWW
                     lblmessage.Text = "Processing failed:" + ex.Message;
 
                     //If session exist, it will be deleted.
-                    if (cacheDirectory != null && Directory.Exists(cacheDirectory))
-                    {
-                        Directory.Delete(cacheDirectory, true);
-                    }
+                    //SessionClean class will exist when merge with Team 2
+                    SessionClean.DeleteSession(cacheDirectory)
                 }
             }
         }
