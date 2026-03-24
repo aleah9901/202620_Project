@@ -15,76 +15,71 @@ namespace QTI_Editor.WWW
 		public QTI_validation_result Validate_QTI(string extractedFolderPath)
 		{
 			QTI_validation_result result = new QTI_validation_result();
-
-			result.IsValid = true;
-			result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
-
-			if (string.IsNullOrWhiteSpace(extractedFolderPath))
 			{
-				result.IsValid = false;
-				result.Message = "Validation Failed: extracted folder path is empty.";
-				
+				result.IsValid = true;
+				result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
 			}
-
-			if (!Directory.Exists(extractedFolderPath))
-			{
-				result.IsValid = false;
-				result.Message = "Validation Failed: extracted folder does not exist.";
-				
-			}
-
 			
-			string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml,
-				SearchOption.AllDirectories);
-
-			if (manifestFiles.Length == 0)
-			{
-				result.IsValid = false;
-				result.Message = "Validation failed: imsmanifest.xml was not found.";
-				
-			}
-
-			
-			string manifestPath = manifestFiles[0];
-			result.ManifestPath = manifestPath;
-
-			//Is imsmanifest.xml readable
 			try
 			{
-				XDocument manifestDoc = XDocument.Load(manifestPath);
 
-				if manifestDoc.Root == null)
+				if (string.IsNullOrWhiteSpace(extractedFolderPath))
 				{
 					result.IsValid = false;
-					result.Message = "Validation failed: imsmanifest.xml is empty.";
-					return result;
+					result.Message = "Validation Failed: extracted folder path is empty.";
 				}
-
-				//Root check
-				if (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
+				
+				else if (!Directory.Exists(extractedFolderPath))
 				{
 					result.IsValid = false;
-					result.Message = "Validation failed: root element is not in manifest.";
-					return result;
+					result.Message = "Validation Failed: extracted folder does not exist.";
+
+				}
+				
+				else
+				{
+					string[] manifestFiles = Directory.GetFiles(
+							extractedFolderPath,
+							"imsmanifest.xml",
+							SearchOption.AllDirectories);
+
+					if (manifestFiles.Length == 0)
+					{
+						result.IsValid = false;
+						result.Message = "Validation failed: imsmanifest.xml was not found.";
+
+					}
+					
+					else
+					{
+						string manifestPath = manifestFiles[0];
+						result.ManifestPath = manifestPath;
+
+						XDocument manifestDoc = XDocument.Load(manifestPath);
+
+						if (manifestDoc.Root == null)
+						{
+							result.IsValid = false;
+							result.Message = "Validation failed: imsmanifest.xml is empty.";
+						}
+						
+						else if (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
+						{
+							result.IsValid = false;
+							result.Message = "Validation failed: root element is not manifest.";
+						}
+					}
 				}
 			}
+			
 			catch (Exception ex)
 			{
 				result.IsValid = false;
-				result.Message = "Validation failed: imsmanifest.xml unable to read. " + ex.Message;
-				return result;
+				result.Message = ex.Message;
 			}
 
-			//Validation rules passed
-			
-			
+			return result;
 		}
 	}
 }
 
-
-
-
-
-
-                }
