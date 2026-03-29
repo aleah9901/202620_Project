@@ -4,8 +4,8 @@ using System.Xml.Linq;
 
 namespace QTI_Editor.WWW
 {	
-	public class QTI_validation_result
-		//---STRUCT NOT OBJECT---
+	public QTI_validation_result
+		//---STRUCT NOT OBJECT-corrected--
 	{
 		public bool IsValid { get; set; }
 		public string Message { get; set; }
@@ -21,28 +21,25 @@ namespace QTI_Editor.WWW
 
 			result.IsValid = true;
 			result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
-            //Validation rules passed
-
-
+           
             if (string.IsNullOrWhiteSpace(extractedFolderPath))
 			{
 				result.IsValid = false;
 				result.Message = "Validation Failed: extracted folder path is empty.";
-				return result;
+				
 			}
-
 			if (!Directory.Exists(extractedFolderPath))
 			{
 				result.IsValid = false;
 				result.Message = "Validation Failed: extracted folder does not exist.";
-
 			}
-
-			else
+		//MADE CORRECTIONS THROUGHT THIS POINT---HAVE QUESTIONS ABOUT THE NEXT ELSE STATEMENT
+			
+		else
 			{
-				string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml,
-
-				SearchOption.AllDirectories);
+				string[] manifestFiles = Directory.GetFiles(extractedFolderPath does not exist.
+			
+				//"imsmanifest.xml,	SearchOption.AllDirectories);
 			}
 
 			if (manifestFiles.Length == 0)
