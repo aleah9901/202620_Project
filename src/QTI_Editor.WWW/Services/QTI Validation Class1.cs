@@ -5,93 +5,73 @@ using System.Xml.Linq;
 namespace QTI_Editor.WWW
 {	
 	public QTI_validation_result
-		//---STRUCT NOT OBJECT-corrected--
 	{
 		public bool IsValid { get; set; }
 		public string Message { get; set; }
 		public string ManifestPath { get; set; }
-		//---STRUCTURE NOT PERFORMING ACTIONS, RESULTS ONLY---
 	}
 	public class QTI_verification
 	{
 		public QTI_validation_result Validate(string extractedFolderPath)
 		{
 			QTI_validation_result result = new QTI_validation_result();
-<<<<<<< HEAD
 
+			if(extractedFolderPath == QTI_validation_result()) 
 			result.IsValid = true;
 			result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
            
             if (string.IsNullOrWhiteSpace(extractedFolderPath))
 			{
-				result.IsValid = false;
+				//result.IsValid = false;
 				result.Message = "Validation Failed: extracted folder path is empty.";
-				
-			}
+			} 
 			if (!Directory.Exists(extractedFolderPath))
 			{
-				result.IsValid = false;
+				//result.IsValid = false;
 				result.Message = "Validation Failed: extracted folder does not exist.";
 			}
-		//MADE CORRECTIONS THROUGHT THIS POINT---HAVE QUESTIONS ABOUT THE NEXT ELSE STATEMENT
+		
 			
-		else
-			{
-				string[] manifestFiles = Directory.GetFiles(extractedFolderPath does not exist.
-			
-				//"imsmanifest.xml,	SearchOption.AllDirectories);
-			}
+		if 
+	{
+		string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml", does not exist.
+		SearchOption.AllDirectories);
+	}
 
 			if (manifestFiles.Length == 0)
 			{
-				result.IsValid = false;
+				//result.IsValid = false;
 				result.Message = "Validation failed: imsmanifest.xml was not found.";
 
 			}
 
-			else {
+			if {
 				string manifestPath = manifestFiles[0];
 				result.ManifestPath = manifestPath;
 			}
 
 			//Is imsmanifest.xml readable
 			if { 
-			
-				//---NEED FILL CLASS NAME---
-				XDocument manifestDoc = XDocument.Load(manifestPath);
-
-				if else 
-=======
-			{
-				result.IsValid = true;
-				result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
+				System.Xml.Linq.XDocument manifestDoc = System.Xml.Linq.XDocument.Load(manifestPath)
+				{
+				//result.IsValid = false;
+				result.Message = "QTI validation failed: imsmanifest.xml is empty.";
 			}
 			
-			try
-			{
-
-				if (string.IsNullOrWhiteSpace(extractedFolderPath))
->>>>>>> 46eccb2706cff2d3eb093ac7329e268149e11067
+				if (manifestDoc.Root.Name.LocalName.ToLower()) != "manifest")
 				{
-					manifestDoc.Root == null)
+					//result.IsValid = false
+					result.Message = "Validation failed: root element is not in manifest.";
+					}
 				
-					result.IsValid = false;
-<<<<<<< HEAD
-					result.Message = "Validation failed: imsmanifest.xml is empty.";
-					
-=======
-					result.Message = "Validation Failed: extracted folder path is empty.";
->>>>>>> 46eccb2706cff2d3eb093ac7329e268149e11067
-				}
-				
-				else if (!Directory.Exists(extractedFolderPath))
+				if else (!Directory.Exists(extractedFolderPath))
 				{
-					result.IsValid = false;
-					result.Message = "Validation Failed: extracted folder does not exist.";
+					//result.IsValid = false;
+					result.Message = "Validation Failed: imsmanifest.xml unable to read.";
 
 				}
 				
-				else
+				if else
 				{
 					string[] manifestFiles = Directory.GetFiles(
 							extractedFolderPath,
@@ -105,7 +85,7 @@ namespace QTI_Editor.WWW
 
 					}
 					
-					else
+					if else
 					{
 						string manifestPath = manifestFiles[0];
 						result.ManifestPath = manifestPath;
@@ -118,35 +98,29 @@ namespace QTI_Editor.WWW
 							result.Message = "Validation failed: imsmanifest.xml is empty.";
 						}
 						
-						else if (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
+						if else (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
 						{
 							result.IsValid = false;
 							result.Message = "Validation failed: root element is not manifest.";
 						}
-					}
+
+                        if else (Exception ex)
+				{
+                            //---(Exception ex)--???
+                            result.IsValid = false;
+                            result.Message = "Validation failed: imsmanifest.xml unable to read." + ex.Message;
+                        }
+                    }
 				}
 			}
 <<<<<<< HEAD
-			if else 
-=======
 			
-			catch (Exception ex)
->>>>>>> 46eccb2706cff2d3eb093ac7329e268149e11067
-			{
-				//---(Exception ex)--???
-			
-				result.IsValid = false;
-				result.Message = ex.Message;
-			}
 
-<<<<<<< HEAD
 			
 			
 			
 =======
-			return result;
->>>>>>> 46eccb2706cff2d3eb093ac7329e268149e11067
-		}
-	}
+			
+        }
 }
 
