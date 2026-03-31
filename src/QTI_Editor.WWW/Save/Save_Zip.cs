@@ -6,8 +6,12 @@ namespace QTI_Editor.WWW
 {
     public static class SaveZipService
     {
-        public static string BuildZip()
+        public static string BuildZip( string sessionFolder, string sessionID)
         {
+            string extractPath = Path.Combine(sessionFolder, sessionID);
+            string editedPath = Path.Combine(sessionFolder, sessionID, "edited");
+
+            string zipPath = Path.Combine(sessionFolder, $"{sessionID}.zip");
 
         }
     }
