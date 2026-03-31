@@ -22,56 +22,57 @@ namespace QTI_Editor.WWW
            
             if (string.IsNullOrWhiteSpace(extractedFolderPath))
 			{
-				//result.IsValid = false;
+				result.IsValid = false;
 				result.Message = "Validation Failed: extracted folder path is empty.";
 			} 
 			if (!Directory.Exists(extractedFolderPath))
 			{
-				//result.IsValid = false;
+				result.IsValid = false;
 				result.Message = "Validation Failed: extracted folder does not exist.";
 			}
 		
 			
-		if 
-	{
-		string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml", does not exist.
-		SearchOption.AllDirectories);
+		{
+		string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml", 
+				SearchOption.AllDirectories);
 	}
 
 			if (manifestFiles.Length == 0)
 			{
-				//result.IsValid = false;
+				result.IsValid = false;
 				result.Message = "Validation failed: imsmanifest.xml was not found.";
 
 			}
 
-			if {
+			{
 				string manifestPath = manifestFiles[0];
 				result.ManifestPath = manifestPath;
 			}
 
 			//Is imsmanifest.xml readable
-			if { 
-				System.Xml.Linq.XDocument manifestDoc = System.Xml.Linq.XDocument.Load(manifestPath)
+			try
+			 { 
+				XDocument manifestDoc = XDocument.Load(manifestPath);
 				{
-				//result.IsValid = false;
+					if (manifestDoc.Document.Root == null);
+				result.IsValid = false;
 				result.Message = "QTI validation failed: imsmanifest.xml is empty.";
 			}
 			
-				if (manifestDoc.Root.Name.LocalName.ToLower()) != "manifest")
+				if (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
 				{
-					//result.IsValid = false
+					result.IsValid = false;
 					result.Message = "Validation failed: root element is not in manifest.";
 					}
 				
-				if else (!Directory.Exists(extractedFolderPath))
+				if (!Directory.Exists(extractedFolderPath))
 				{
-					//result.IsValid = false;
+					result.IsValid = false;
 					result.Message = "Validation Failed: imsmanifest.xml unable to read.";
 
 				}
 				
-				if else
+				if ( ????????????????)
 				{
 					string[] manifestFiles = Directory.GetFiles(
 							extractedFolderPath,
@@ -85,7 +86,7 @@ namespace QTI_Editor.WWW
 
 					}
 					
-					if else
+					if (???????????????????)
 					{
 						string manifestPath = manifestFiles[0];
 						result.ManifestPath = manifestPath;
@@ -98,13 +99,13 @@ namespace QTI_Editor.WWW
 							result.Message = "Validation failed: imsmanifest.xml is empty.";
 						}
 						
-						if else (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
+						if (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
 						{
 							result.IsValid = false;
 							result.Message = "Validation failed: root element is not manifest.";
 						}
 
-                        if else (Exception ex)
+                        catch (Exception ex)
 				{
                             //---(Exception ex)--???
                             result.IsValid = false;
@@ -113,14 +114,14 @@ namespace QTI_Editor.WWW
                     }
 				}
 			}
-<<<<<<< HEAD
+
 			
 
 			
 			
 			
-=======
+
 			
-        }
-}
+        
+
 
