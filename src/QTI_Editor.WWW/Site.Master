@@ -1,0 +1,36 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="QTI_Editor.WWW.Site" %>
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>QTI Editor</title>
+    <asp:ContentPlaceHolder ID="header" runat="server">
+    </asp:ContentPlaceHolder>
+    <link rel="stylesheet" href="Style/SiteStyle.css" />
+</head>
+<body>
+    <form id="form1" runat="server">
+        <header>
+            <h1><strong>QTI Editor</strong></h1>
+
+            <asp:ContentPlaceHolder ID="HeaderControls" runat="server" />
+        </header>
+
+        <main>
+            <asp:ContentPlaceHolder ID="MainContent" runat="server">
+            </asp:ContentPlaceHolder>
+        </main>
+   </form>
+
+     <%-- Modal from team 4 --%>
+     <div id="statusModal" class="modal">
+         <div class="modal-content">
+             <div class="spinner"></div>
+             <div id="statusText" class="status-text">Processing...</div>
+         </div>
+     </div>
+
+    <script src="Scripts/Modal.js"></script>
+</body>
+</html>
