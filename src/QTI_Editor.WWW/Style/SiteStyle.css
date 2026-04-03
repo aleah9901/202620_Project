@@ -17,13 +17,16 @@ header {
     align-items: center;
     justify-content: space-between;
     padding: 0 30px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
     border-bottom: 1px solid #ccc;
     z-index: 100;
     box-sizing: border-box;
 }
 
-header h1 { font-size: 18px; margin: 0; }
+header h1 {
+    font-size: 18px;
+    margin: 0;
+}
 
 main {
     display: block;
@@ -35,27 +38,9 @@ main {
     box-sizing: border-box;
 }
 
-/* ── Buttons ────────────────────────────────────── */
+/* Buttons */
 
-.btn {
-    padding: 8px 20px;
-    font-size: 14px;
-    font-family: Arial, sans-serif;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background: #fff;
-    color: #333;
-    cursor: pointer;
-}
-.btn:hover { background: #f5f5f5; }
-
-.btn-primary {
-    background: #222;
-    color: #fff;
-    border-color: #222;
-}
-.btn-primary:hover { background: #444; }
-
+.btn,
 .modalButton {
     padding: 8px 20px;
     font-size: 14px;
@@ -66,9 +51,23 @@ main {
     color: #333;
     cursor: pointer;
 }
-.modalButton:hover { background: #f5f5f5; }
 
-/* ── Question List Table ────────────────────────── */
+.btn:hover,
+.modalButton:hover {
+    background: #f5f5f5;
+}
+
+.btn-primary {
+    background: #222;
+    color: #fff;
+    border-color: #222;
+}
+
+.btn-primary:hover {
+    background: #444;
+}
+
+/* Question List Table */
 
 .q-table {
     width: 100%;
@@ -93,8 +92,13 @@ main {
     vertical-align: middle;
 }
 
-.q-table td:first-child { font-weight: bold; }
-.q-table td:last-child  { text-align: right; }
+.q-table td:first-child {
+    font-weight: bold;
+}
+
+.q-table td:last-child {
+    text-align: right;
+}
 
 /* Type badge/pill */
 .type-badge {
@@ -107,7 +111,7 @@ main {
     color: #555;
 }
 
-/* ── Form Fields (Question Editor) ──────────────── */
+/* Form Fields (Question Editor) */
 
 .field-group {
     margin-bottom: 18px;
@@ -144,9 +148,12 @@ main {
     color: #333;
 }
 
-textarea.field-input { resize: vertical; min-height: 100px; }
+textarea.field-input {
+    resize: vertical;
+    min-height: 100px;
+}
 
-/* ── Choice Table (answers) ─────────────────────── */
+/* Choice Table (answers) */
 
 .choice-table {
     width: 100%;
@@ -170,7 +177,7 @@ textarea.field-input { resize: vertical; min-height: 100px; }
     vertical-align: middle;
 }
 
-/* ── Bottom Action Bar ──────────────────────────── */
+/* Bottom Action Bar */
 
 .action-bar {
     display: flex;
@@ -181,7 +188,7 @@ textarea.field-input { resize: vertical; min-height: 100px; }
     border-top: 1px solid #eee;
 }
 
-/* ── Add Question Row ───────────────────────────── */
+/* Add Question Row */
 
 .add-row {
     display: flex;
@@ -199,7 +206,7 @@ textarea.field-input { resize: vertical; min-height: 100px; }
     width: 250px;
 }
 
-/* ── Page headings ──────────────────────────────── */
+/* Page headings */
 
 .page-title {
     text-align: center;
@@ -213,20 +220,19 @@ textarea.field-input { resize: vertical; min-height: 100px; }
     margin: 0 0 25px;
 }
 
-/* ── Upload page ────────────────────────────────── */
-label {
-    font-family: Arial, sans-serif;
-}
+/* Upload page */
 
-/* ── Modal ──────────────────────────────────────── */
+/* Modal */
 
 .modal {
     display: none;
     position: fixed;
     z-index: 1000;
-    left: 0; top: 0;
-    width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.5);
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
     justify-content: center;
     align-items: center;
 }
@@ -235,7 +241,6 @@ label {
     background: white;
     padding: 40px;
     border-radius: 10px;
-    text-align: center;
     width: 300px;
 }
 
@@ -243,24 +248,33 @@ label {
     border: 6px solid #f3f3f3;
     border-top: 6px solid #3498db;
     border-radius: 50%;
-    width: 50px; height: 50px;
+    width: 50px;
+    height: 50px;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px auto;
 }
 
 @keyframes spin {
-    0%   { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .status-text {
-    font-size: 16px;
     font-weight: bold;
 }
 
-.error-label { color: red; display: block; margin-top: 8px; }
+.error-label {
+    color: red;
+    display: block;
+    margin-top: 8px;
+}
 
-/* ── Quiz Title Row ─────────────────────────────── */
+/* Quiz Title Row */
 
 .quiz-title-row {
     display: flex;
@@ -285,16 +299,28 @@ label {
     flex: 1;
     background: transparent;
 }
+
 .quiz-title-input:focus {
     outline: none;
     border-bottom-color: #999;
 }
 
-/* ── Button Variants ────────────────────────────── */
+/* Button Variants */
 
-.btn-sm { padding: 4px 12px; font-size: 12px; }
-.btn-danger { color: #c00; border-color: #dcc; }
-.btn-danger:hover { background: #fef0f0; }
+.btn-sm {
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.btn-danger {
+    color: #c00;
+    border-color: #dcc;
+}
+
+.btn-danger:hover {
+    background: #fef0f0;
+}
+
 .btn-link {
     background: none;
     border: none;
@@ -305,9 +331,12 @@ label {
     font-size: 13px;
     font-family: Arial, sans-serif;
 }
-.btn-link:hover { color: #333; }
 
-/* ── Choice Row (answer with check + text + remove) */
+.btn-link:hover {
+    color: #333;
+}
+
+/* Choice Row (answer with check + text + remove) */
 
 .choice-row {
     display: flex;
