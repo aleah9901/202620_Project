@@ -1,23 +1,8 @@
-﻿$(function () {
+﻿function showModal(message) {
+    document.getElementById("statusText").innerText = message;
+    document.getElementById("statusModal").style.display = "flex";
+}
 
-    $("#saveBtn").on("click", function () {
-
-        showModal("Saving...");
-
-        $.ajax({
-            url: "/api/save",
-            type: "POST",
-            data: {
-                value: $("#inputField").val()
-            },
-            success: function (response) {
-                showModal("Saved successfully!");
-            },
-            error: function () {
-                showModal("Error saving data");
-            }
-        });
-
-    });
-
-});
+function hideModal() {
+    document.getElementById("statusModal").style.display = "none";
+}
