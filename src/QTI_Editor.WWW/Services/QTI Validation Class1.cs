@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml.Linq;
 
@@ -75,7 +76,54 @@ namespace QTI_Editor.WWW
 				return result;
 			}
 
-			return result;
+
+            //does imsmanifest.xml fit the schema
+
+            try
+            {
+                XDocument manifestDoc = XDocument.Load(manifestPath);
+				if (manifestDoc.XAttribute.source != 1 || manifestDoc.XAttribute.source != 0)
+                {
+                    result.IsValid = false;
+					result.Message = "Validation failed: imsmanifest.xml does not adhere to QTI 2.2 specification. ";
+                    return result;
+                }
+                if (manifestDoc.XAttribute.value != 1 || manifestDoc.XAttribute.value != 0)
+                {
+                    result.IsValid = false;
+                    result.Message = "Validation failed: imsmanifest.xml does not adhere to QTI 2.2 specification. ";
+                    return result;
+                }
+                if (manifestDoc.XAttribute.entity != 1 || manifestDoc.XAttribute.source != 0)
+                {
+                    result.IsValid = false;
+                    result.Message = "Validation failed: imsmanifest.xml does not adhere to QTI 2.2 specification. ";
+                    return result;
+                }
+
+
+            }
+            catch (Exception ex)
+            {
+                result.IsValid = false;
+                result.Message = "Validation failed: imsmanifest.xml does not adhere to QTI 2.2 specification. " + ex.Message;
+                return result;
+            }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            return result;
 
 			//Validation rules passed
 			
