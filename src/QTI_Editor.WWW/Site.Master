@@ -1,4 +1,4 @@
-﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="QTI_Editor.WWW.Site" %>
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="QTI_Editor.WWW.Site" %>
 
 <!DOCTYPE html>
 
@@ -7,7 +7,7 @@
     <title>QTI Editor</title>
     <asp:ContentPlaceHolder ID="header" runat="server">
     </asp:ContentPlaceHolder>
-    <link rel="stylesheet" href="Style/SiteStyle.css" />
+    <link rel="stylesheet" href="Style/SiteStyle.css?v=2" />
 </head>
 <body>
     <form id="form1" runat="server">
