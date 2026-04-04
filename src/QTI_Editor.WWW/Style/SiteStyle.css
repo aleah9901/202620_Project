@@ -1,34 +1,229 @@
-﻿body {
+body {
     font-family: Arial, sans-serif;
-    text-align: center;
-    display: center;
+    margin: 0;
     padding-top: 60px;
-
+    background: #fff;
+    color: #222;
 }
 
 header {
-    position:fixed;
+    position: fixed;
+    top: 0;
     left: 0;
     width: 100%;
     height: 60px;
     background-color: #f1f1f1;
     display: flex;
     align-items: center;
-    padding: 0 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    justify-content: space-between;
+    padding: 0 30px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    border-bottom: 1px solid #ccc;
     z-index: 100;
+    box-sizing: border-box;
 }
 
-header {top: 0; border-bottom: 1px solid #ccc;}
+header h1 {
+    font-size: 18px;
+    margin: 0;
+}
 
-button {
-    padding: 10px 20px;
-    margin: 10px;
-    font-size: 16px;
+main {
+    display: block;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 30px 20px;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+/* Buttons */
+
+.btn,
+.modalButton {
+    padding: 8px 20px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    color: #333;
     cursor: pointer;
 }
 
-/* Modal Background */
+.btn:hover,
+.modalButton:hover {
+    background: #f5f5f5;
+}
+
+.btn-primary {
+    background: #222;
+    color: #fff;
+    border-color: #222;
+}
+
+.btn-primary:hover {
+    background: #444;
+}
+
+/* Question List Table */
+
+.q-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 auto 30px auto;
+}
+
+.q-table th {
+    text-align: left;
+    font-size: 13px;
+    font-weight: normal;
+    font-style: italic;
+    color: #555;
+    padding: 6px 8px;
+    border-bottom: 1px solid #ccc;
+}
+
+.q-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.q-table td:first-child {
+    font-weight: bold;
+}
+
+.q-table td:last-child {
+    text-align: right;
+}
+
+/* Type badge/pill */
+.type-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    border-radius: 12px;
+    background: #fafafa;
+    color: #555;
+}
+
+/* Form Fields (Question Editor) */
+
+.field-group {
+    margin-bottom: 18px;
+}
+
+.field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #888;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.field-input {
+    width: 100%;
+    padding: 10px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    background: #fff;
+}
+
+.field-input:focus {
+    outline: none;
+    border-color: #999;
+}
+
+.field-input-readonly {
+    background: #f9f9f9;
+    color: #333;
+}
+
+textarea.field-input {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Choice Table (answers) */
+
+.choice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+}
+
+.choice-table th {
+    text-align: left;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #888;
+    padding: 6px 8px;
+    border-bottom: 1px solid #ccc;
+}
+
+.choice-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+/* Bottom Action Bar */
+
+.action-bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Add Question Row */
+
+.add-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.add-row input[type="text"] {
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    width: 250px;
+}
+
+/* Page headings */
+
+.page-title {
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+    margin: 20px 0 5px;
+}
+
+.page-subtitle {
+    text-align: center;
+    margin: 0 0 25px;
+}
+
+/* Upload page */
+
+/* Modal */
+
 .modal {
     display: none;
     position: fixed;
@@ -42,33 +237,13 @@ button {
     align-items: center;
 }
 
-.modalButton {
-    padding: 10px 18px;
-    text-align: center;
-    font-size: 16px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-    .modalButton:hover {
-        background-color: #45a049;
-    }
-
-/* Modal Content */
 .modal-content {
     background: white;
     padding: 40px;
     border-radius: 10px;
-    text-align: center;
     width: 300px;
 }
 
-label {
-    text-align: center;
-    font-family: Arial, sans-serif;
-}
-
-/* Spinner */
 .spinner {
     border: 6px solid #f3f3f3;
     border-top: 6px solid #3498db;
@@ -90,8 +265,83 @@ label {
 }
 
 .status-text {
-    font-size: 16px;
     font-weight: bold;
 }
 
+.error-label {
+    color: red;
+    display: block;
+    margin-top: 8px;
+}
 
+/* Quiz Title Row */
+
+.quiz-title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.quiz-title-label {
+    font-size: 13px;
+    color: #888;
+    white-space: nowrap;
+}
+
+.quiz-title-input {
+    font-size: 18px;
+    font-weight: bold;
+    font-family: Arial, sans-serif;
+    border: none;
+    border-bottom: 1px solid transparent;
+    padding: 4px 0;
+    flex: 1;
+    background: transparent;
+}
+
+.quiz-title-input:focus {
+    outline: none;
+    border-bottom-color: #999;
+}
+
+/* Button Variants */
+
+.btn-sm {
+    padding: 4px 12px;
+    font-size: 12px;
+}
+
+.btn-danger {
+    color: #c00;
+    border-color: #dcc;
+}
+
+.btn-danger:hover {
+    background: #fef0f0;
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: #888;
+    font-style: italic;
+    cursor: pointer;
+    padding: 6px 0;
+    font-size: 13px;
+    font-family: Arial, sans-serif;
+}
+
+.btn-link:hover {
+    color: #333;
+}
+
+/* Choice Row (answer with check + text + remove) */
+
+.choice-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+}
