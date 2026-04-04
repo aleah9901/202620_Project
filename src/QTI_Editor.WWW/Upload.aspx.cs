@@ -13,41 +13,69 @@ namespace QTI_Editor.WWW
     {
         public void Process_ZIP(object sender, EventArgs e)
         {
-            // UI guard: file must be selected
+            const string CACHECONST = "~/cache/";
+            string sessionId = null;
+            string cacheDirectory = null;
+
+            //Test if there is a file
             if (FileUpload1.FileName.Length == 0)
             {
                 lblmessage.Text = "Please choose a ZIP file.";
-                HideModal();
-                return;
             }
 
-            // Delegate full pipeline to the service layer
-            var service = new UploadService();
-            var result  = service.ProcessUpload(
-                FileUpload1.PostedFile.InputStream,
-                Path.GetFileName(FileUpload1.FileName),
-                Server);
-
-            if (!result.Success)
+            //Test if file is a zip file
+            else if (!Path.GetFileName(FileUpload1.FileName).EndsWith(".zip"))
             {
-                lblmessage.Text = result.Message;
-                HideModal();
-                return;
+                lblmessage.Text = "Only .zip files are allowed.";
             }
 
-            // Store session ID for downstream pages
-            Session["QtiSessionId"] = result.SessionId;
+            else
+            {
+                try
+                {
+                    //Generate Session ID
+                    sessionId = QTI_Editor.WWW.Services.SessionService.GenerateSession();
 
-            // Redirect to the Quiz Overview editor
-            Response.Redirect("~/QuizOverview.aspx");
-        }
 
-        // Injects a client-side call to hide the spinner modal
-        // Used when a validation error keeps the user on this page
-        private void HideModal()
-        {
-            ScriptManager.RegisterStartupScript(
-                this, GetType(), "HideModal", "hideModal();", addScriptTags: true);
+                    //Create Cache Directory
+                    cacheDirectory = Server.MapPath(CACHECONST + sessionId);
+                    Directory.CreateDirectory(cacheDirectory);
+
+                    //Copies contents from original zip to cache session zip
+                    string zipPath = Path.Combine(cacheDirectory, sessionId + ".zip");
+                    FileUpload1.SaveAs(zipPath);
+
+                    //Extracted zipPath method goes here
+
+                    //QTI verification
+                    QTI_verification verifier = new QTI_verification();
+                    QTI_validation_result validationrResult = verifier.Validate_QTI(extractPath);
+
+                    //Delete directory if validation fails
+                    if (!validationrResult.IsValid)
+                    {
+                        lblmessage.Text = validationrResult.Message;
+                        //SessionClean class will exist when merge with Team 2
+                        SessionClean.DeleteSession(cacheDirectory);
+                    }
+
+                    //Redirects to QuestionOverview
+                    else
+                    {
+                        Response.Redirect("QuestionOverview.aspx?id=" + sessionId);
+                    }
+                }
+
+                //Will display error message and clean created sessions
+                catch (Exception ex)
+                {
+                    lblmessage.Text = "Processing failed:" + ex.Message;
+
+                    //If session exist, it will be deleted.
+                    //SessionClean class will exist when merge with Team 2
+                    SessionClean.DeleteSession(cacheDirectory)
+                }
+            }
         }
     }
 }
