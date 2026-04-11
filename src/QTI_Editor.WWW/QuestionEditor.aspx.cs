@@ -75,7 +75,8 @@ namespace QTI_Editor.WWW
         // Returns true when the item body contains the trigger phrase "Upload a file".
         private bool IsFileUploadQuestion(string bodyText)
         {
-            return !string.IsNullOrEmpty(bodyText) && bodyText.IndexOf("Upload a file",StringComparison.OrdinalIgnoreCase) >= 0;
+            if (!string.IsNullOrEmpty(bodyText) && bodyText.IndexOf("Upload a file", StringComparison.OrdinalIgnoreCase) >= 0)
+                return  true;
         }
 
         // Returns true when the correct response for a text-entry interaction follows the [x,y] notation.

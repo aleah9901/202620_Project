@@ -73,7 +73,7 @@ namespace QTI_Editor.WWW
 
                     //If session exist, it will be deleted.
                     //SessionClean class will exist when merge with Team 2
-                    SessionClean.DeleteSession(cacheDirectory)
+                    SessionClean.DeleteSession(cacheDirectory);
                 }
             }
         }
