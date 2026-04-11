@@ -27,56 +27,61 @@ namespace QTI_Editor.WWW
 
         // Detects the question type.
         // Priority order: 1. File Upload, 2. Essay, 3. Numerical Range, 4. Choice based
-        private QuestionType DetectQuestionType(XElement itemBody, string bodyText)
-        {
-            // 1. File upload trigger
-            if (IsFileUploadQuestion(bodyText))
-                return QuestionType.FileUpload;
+        //private QuestionType DetectQuestionType(XElement itemBody, string bodyText)
+        //{
+        //    // 1. File upload trigger
+        //    if (IsFileUploadQuestion(bodyText))
+        //        return QuestionType.FileUpload;
 
-            if (itemBody == null)
-                return QuestionType.LongFormEssay;
+        //    if (itemBody == null)
+        //        return QuestionType.LongFormEssay;
 
-            // Locate QTI 2.2 interaction elements
-            XElement choiceInteraction = itemBody.Descendants(QtiNs + "choiceInteraction").FirstOrDefault();
-            XElement textEntry = itemBody.Descendants(QtiNs + "textEntryInteraction").FirstOrDefault();
-            XElement extendedText = itemBody.Descendants(QtiNs + "extendedTextInteraction").FirstOrDefault();
-            XElement uploadInteraction = itemBody.Descendants(QtiNs + "uploadInteraction").FirstOrDefault();
+        //    // Locate QTI 2.2 interaction elements
+        //    XElement choiceInteraction = itemBody.Descendants(QtiNs + "choiceInteraction").FirstOrDefault();
+        //    XElement textEntry = itemBody.Descendants(QtiNs + "textEntryInteraction").FirstOrDefault();
+        //    XElement extendedText = itemBody.Descendants(QtiNs + "extendedTextInteraction").FirstOrDefault();
+        //    XElement uploadInteraction = itemBody.Descendants(QtiNs + "uploadInteraction").FirstOrDefault();
 
-            // 2. Essay
-            if (extendedText != null)
-                return QuestionType.LongFormEssay;
+        //    // 2. Essay
+        //    if (extendedText != null)
+        //        return QuestionType.LongFormEssay;
             
-            bool hasAnyInteraction = choiceInteraction != null || textEntry != null || uploadInteraction != null;
+        //    bool hasAnyInteraction = choiceInteraction != null || textEntry != null || uploadInteraction != null;
            
-            if (!hasAnyInteraction)
-                return QuestionType.LongFormEssay;
+        //    if (!hasAnyInteraction)
+        //        return QuestionType.LongFormEssay;
 
-            // If "Upload a file" text wasn't found, check if the QTI XML structure defines this as a file upload
-            if (uploadInteraction != null)
-                return QuestionType.FileUpload;
+        //    // If "Upload a file" text wasn't found, check if the QTI XML structure defines this as a file upload
+        //    if (uploadInteraction != null)
+        //        return QuestionType.FileUpload;
 
-            // 3. Numerical range [x,y] in the correct response
-            if (textEntry != null && HasNumericalRangeResponse(itemBody.Document?.Root))
-                return QuestionType.NumericalRange;
+        //    // 3. Numerical range [x,y] in the correct response
+        //    if (textEntry != null && HasNumericalRangeResponse(itemBody.Document?.Root))
+        //        return QuestionType.NumericalRange;
 
-            // 4. Choice based questions
-            if (choiceInteraction != null)
-            {
-                string maxChoicesAttr = (string)choiceInteraction.Attribute("maxChoices");
-                int maxChoices = 1;
-                int.TryParse(maxChoicesAttr, out maxChoices);
+        //    // 4. Choice based questions
+        //    if (choiceInteraction != null)
+        //    {
+        //        string maxChoicesAttr = (string)choiceInteraction.Attribute("maxChoices");
+        //        int maxChoices = 1;
+        //        int.TryParse(maxChoicesAttr, out maxChoices);
 
-                return maxChoices > 1 ? QuestionType.MultiSelect : QuestionType.MultipleChoice;
-            }
+        //        return maxChoices > 1 ? QuestionType.MultiSelect : QuestionType.MultipleChoice;
+        //    }
 
-            return QuestionType.Unknown;
-        }
+        //    return QuestionType.Unknown;
+        //}
 
         // Returns true when the item body contains the trigger phrase "Upload a file".
         private bool IsFileUploadQuestion(string bodyText)
         {
-            if (!string.IsNullOrEmpty(bodyText) && bodyText.IndexOf("Upload a file", StringComparison.OrdinalIgnoreCase) >= 0)
-                return  true;
+            bool stringNotEmpty = !string.IsNullOrEmpty(bodyText);
+            bool containsTriggerPhrase = bodyText.IndexOf("Upload a file", StringComparison.OrdinalIgnoreCase) >= 0;
+
+
+
+            return (stringNotEmpty && containsTriggerPhrase);
+                
         }
 
         // Returns true when the correct response for a text-entry interaction follows the [x,y] notation.
