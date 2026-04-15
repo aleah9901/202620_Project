@@ -13,12 +13,6 @@ namespace QTI_Editor.WWW
 	public class QTI_verification
 	{
 		public QTI_validation_result Validate(string extractedFolderPath)
-		{
-			QTI_validation_result result = new QTI_validation_result();
-
-			if(extractedFolderPath == QTI_validation_result()) 
-			result.IsValid = true;
-			result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
            
             if (string.IsNullOrWhiteSpace(extractedFolderPath))
 			{
