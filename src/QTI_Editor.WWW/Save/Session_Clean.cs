@@ -4,8 +4,7 @@ using System.IO;
 namespace QTI_Editor.WWW
 {
     //This class will delete cache session
-    private class SessionClean
-    {
+    
         public class SessionClean
         {
             public static void DeleteSession(string sessionFolder)
@@ -19,4 +18,3 @@ namespace QTI_Editor.WWW
             }
         }
     }
-}
