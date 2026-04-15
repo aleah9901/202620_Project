@@ -2,7 +2,6 @@ using System;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using QTI_Editor.WWW.Save;
 
 namespace QTI_Editor.WWW
 {
@@ -10,11 +9,6 @@ namespace QTI_Editor.WWW
     // Loads the question list from the manifest and handles Export, quiz title, add/remove questions
     public partial class QuizOverview : System.Web.UI.Page
     {
-        // This will send the correct cache folder to use that should have the qti file in it.
-        private string SessionId => Request.QueryString["id"];
-        private string SessionFolder => Server.MapPath("~/cache/" + SessionId);
-        private string ExtractFolder => System.IO.Path.Combine(SessionFolder, "extract");
-
         protected void Page_Load(object sender, EventArgs e)
         {
             // Redirect back to upload if there is no active session
@@ -31,7 +25,7 @@ namespace QTI_Editor.WWW
         // Reads the quiz title from the manifest and populates the title input
         private void LoadQuizTitle()
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string sessionId = (string)Session["QtiSessionId"];
             var service = new QuestionEditService();
             txtQuizTitle.Text = service.GetQuizTitle(sessionId, Server);
         }
@@ -39,7 +33,7 @@ namespace QTI_Editor.WWW
         // Reads all question items from the manifest and binds them to the Repeater
         private void BindQuestionList()
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string sessionId = (string)Session["QtiSessionId"];
 
             var service = new QuestionEditService();
             var items   = service.GetManifestItems(sessionId, Server);
@@ -57,7 +51,7 @@ namespace QTI_Editor.WWW
         // Saves the quiz title to the manifest when the input loses focus
         protected void QuizTitle_Changed(object sender, EventArgs e)
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string sessionId = (string)Session["QtiSessionId"];
             var service = new QuestionEditService();
             service.SetQuizTitle(sessionId, txtQuizTitle.Text.Trim(), Server);
         }
@@ -75,7 +69,7 @@ namespace QTI_Editor.WWW
 
             if (e.CommandName == "Remove")
             {
-                string sessionId = Session["QtiSessionId"] as string;
+                string sessionId = (string)Session["QtiSessionId"];
                 var service = new QuestionEditService();
                 service.DeleteQuestion(sessionId, href, Server);
                 BindQuestionList();
@@ -85,8 +79,9 @@ namespace QTI_Editor.WWW
         // Creates a new question item, registers it in the manifest, and opens it for editing
         protected void AddQuestion_Click(object sender, EventArgs e)
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string sessionId = (string)Session["QtiSessionId"];
             string title     = txtNewQuestionTitle.Text.Trim();
+            string qType     = ddlNewQuestionType.SelectedValue;
 
             if (string.IsNullOrWhiteSpace(title))
             {
@@ -96,7 +91,7 @@ namespace QTI_Editor.WWW
             }
 
             var service = new QuestionEditService();
-            string href = service.CreateNewQuestion(sessionId, title, Server);
+            string href = service.CreateNewQuestion(sessionId, title, qType, Server);
 
             if (string.IsNullOrEmpty(href))
             {
@@ -113,7 +108,7 @@ namespace QTI_Editor.WWW
         // Re-packages the edited extracted content and streams it as a file download
         protected void Export_ZIP(object sender, EventArgs e)
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string sessionId = (string)Session["QtiSessionId"];
 
             var service = new ExportService();
             var result  = service.ExportToZip(sessionId, Server);
@@ -122,7 +117,7 @@ namespace QTI_Editor.WWW
             {
                 ScriptManager.RegisterStartupScript(
                     this, GetType(), "HideModal",
-                    $"hideModal(); alert('{EscapeJs(result.Message)}');",
+                    "hideModal(); alert('" + HttpUtility.JavaScriptStringEncode(result.Message) + "');",
                     addScriptTags: true);
                 return;
             }
@@ -135,15 +130,6 @@ namespace QTI_Editor.WWW
             Response.TransmitFile(result.ZipPath);
             Response.Flush();
             Response.End();
-        }
-
-        // Cleans up text so it doesn't break the browser's popup message box
-        private static string EscapeJs(string s)
-        {
-            return s?.Replace("\\", "\\\\")
-                     .Replace("'", "\\'")
-                     .Replace("\r", "")
-                     .Replace("\n", "") ?? string.Empty;
         }
     }
 }

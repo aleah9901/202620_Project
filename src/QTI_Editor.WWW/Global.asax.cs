@@ -1,8 +1,5 @@
 using System;
 using System.Web;
-using System.Web.Security;
-using System.Web.SessionState;
-using QTI_Editor.WWW.Save;
 
 namespace QTI_Editor.WWW
 {
@@ -17,7 +14,7 @@ namespace QTI_Editor.WWW
         // Note: only fires automatically when sessionState mode="InProc" (the project default)
         protected void Session_End(object sender, EventArgs e)
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string sessionId = (string)Session["QtiSessionId"];
 
             if (!string.IsNullOrWhiteSpace(sessionId))
             {

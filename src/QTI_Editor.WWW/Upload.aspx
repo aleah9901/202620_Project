@@ -1,4 +1,4 @@
-﻿<%-- This is a control where we utilize the HTMLInputFile Control
+<%-- This is a control where we utilize the HTMLInputFile Control
         From this this .aspx we can create have the button for a user to select a file.
         Then we can send the file path to Upload.aspx.cs for backend logic.
        --%>
@@ -7,7 +7,7 @@
     MasterPageFile="~/Site.Master"
     Language="C#"
     AutoEventWireup="true"
-    CodeBehind="~/Upload.aspx.cs"
+    CodeBehind="Upload.aspx.cs"
     Inherits="QTI_Editor.WWW.Upload" %>
 
 
