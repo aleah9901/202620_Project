@@ -21,8 +21,7 @@ namespace QTI_Editor.WWW
         protected global::System.Web.UI.WebControls.Repeater     choiceRepeater;
         protected global::System.Web.UI.WebControls.Button       btnAddAnswer;
         protected global::System.Web.UI.WebControls.Panel        pnlShortAnswer;
-        protected global::System.Web.UI.WebControls.Repeater     shortAnswerRepeater;
-        protected global::System.Web.UI.WebControls.Button       btnAddShortAnswer;
+        protected global::System.Web.UI.WebControls.TextBox      txtShortAnswer;
         protected global::System.Web.UI.WebControls.Panel        pnlRange;
         protected global::System.Web.UI.WebControls.TextBox      txtRangeMin;
         protected global::System.Web.UI.WebControls.TextBox      txtRangeMax;

@@ -1,154 +1,127 @@
 using System;
 using System.IO;
-using System.Linq;
 using System.Xml.Linq;
 
 namespace QTI_Editor.WWW
-{
-    // Holds the outcome of a QTI 2.2 validation pass.
-    public class QTI_validation_result
-    {
-        public bool IsValid { get; set; }
-        public string Message { get; set; }
-        public string ManifestPath { get; set; }
-    }
+{	
+	public QTI_validation_result
+	{
+		public bool IsValid { get; set; }
+		public string Message { get; set; }
+		public string ManifestPath { get; set; }
+	}
+	public class QTI_verification
+	{
+		public QTI_validation_result Validate(string extractedFolderPath)
+		{
+			QTI_validation_result result = new QTI_validation_result();
 
-    // Validates an extracted QTI 2.2 package by locating and parsing imsmanifest.xml.
-    // Also verifies that the manifest contains QTI resource entries and that the
-    // referenced item files exist on disk.
-    public class QTI_verification
-    {
-        // Public entry point called by UploadService and Upload.aspx.cs.
-        public QTI_validation_result Validate_QTI(string extractedFolderPath)
-        {
-            return Validate(extractedFolderPath);
-        }
-
-        // Validates the extracted folder for QTI 2.2 compliance:
-        //   1. Folder path is not empty
-        //   2. Folder exists on disk
-        //   3. imsmanifest.xml is present
-        //   4. imsmanifest.xml is readable XML
-        //   5. Root element is "manifest"
-        //   6. At least one resource element with a QTI type exists
-        //   7. Referenced item files exist on disk
-        // Returns a single QTI_validation_result with the outcome.
-        public QTI_validation_result Validate(string extractedFolderPath)
-        {
-            var result = new QTI_validation_result();
-
-            // 1. Check that the path is not empty
+			if(extractedFolderPath == QTI_validation_result()) 
+			result.IsValid = true;
+			result.Message = "QTI validation passed: imsmanifest.xml found and successfully read.";
+           
             if (string.IsNullOrWhiteSpace(extractedFolderPath))
-            {
-                result.IsValid = false;
-                result.Message = "Validation failed: extracted folder path is empty.";
-                return result;
-            }
+			{
+				result.IsValid = false;
+				result.Message = "Validation Failed: extracted folder path is empty.";
+			} 
+			if (!Directory.Exists(extractedFolderPath))
+			{
+				result.IsValid = false;
+				result.Message = "Validation Failed: extracted folder does not exist.";
+			}
+		
+			
+		{
+		string[] manifestFiles = Directory.GetFiles(extractedFolderPath, "imsmanifest.xml", 
+				SearchOption.AllDirectories);
+	}
 
-            // 2. Check that the folder exists
-            if (!Directory.Exists(extractedFolderPath))
-            {
-                result.IsValid = false;
-                result.Message = "Validation failed: extracted folder does not exist.";
-                return result;
-            }
+			if (manifestFiles.Length == 0)
+			{
+				result.IsValid = false;
+				result.Message = "Validation failed: imsmanifest.xml was not found.";
 
-            // 3. Locate imsmanifest.xml
-            string[] manifestFiles = Directory.GetFiles(
-                extractedFolderPath, "imsmanifest.xml", SearchOption.AllDirectories);
+			}
 
-            if (manifestFiles.Length == 0)
-            {
-                result.IsValid = false;
-                result.Message = "Validation failed: imsmanifest.xml was not found.";
-                return result;
-            }
+			{
+				string manifestPath = manifestFiles[0];
+				result.ManifestPath = manifestPath;
+			}
 
-            // Simplified: assign directly to result.ManifestPath (#22)
-            result.ManifestPath = manifestFiles[0];
+			//Is imsmanifest.xml readable
+			try
+			 { 
+				XDocument manifestDoc = XDocument.Load(manifestPath);
+				{
+					if (manifestDoc.Document.Root == null);
+				result.IsValid = false;
+				result.Message = "QTI validation failed: imsmanifest.xml is empty.";
+			}
+			
+				if (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
+				{
+					result.IsValid = false;
+					result.Message = "Validation failed: root element is not in manifest.";
+					}
+				
+				if (!Directory.Exists(extractedFolderPath))
+				{
+					result.IsValid = false;
+					result.Message = "Validation Failed: imsmanifest.xml unable to read.";
 
-            // 4. Attempt to read and parse the manifest
-            XDocument manifestDoc;
-            try
-            {
-                manifestDoc = XDocument.Load(result.ManifestPath);
+				}
+				
+				if ( ????????????????)
+				{
+					string[] manifestFiles = Directory.GetFiles(
+							extractedFolderPath,
+							"imsmanifest.xml",
+							SearchOption.AllDirectories);
 
-                if (manifestDoc.Root == null)
-                {
-                    result.IsValid = false;
-                    result.Message = "Validation failed: imsmanifest.xml is empty.";
-                    return result;
-                }
+					if (manifestFiles.Length == 0)
+					{
+						result.IsValid = false;
+						result.Message = "Validation failed: imsmanifest.xml was not found.";
 
-                // 5. Root element must be "manifest"
-                if (!manifestDoc.Root.Name.LocalName.Equals("manifest", StringComparison.OrdinalIgnoreCase))
-                {
-                    result.IsValid = false;
-                    result.Message = "Validation failed: root element is not 'manifest'.";
-                    return result;
-                }
-            }
-            catch (Exception ex)
-            {
-                result.IsValid = false;
-                result.Message = "Validation failed: imsmanifest.xml unable to read. " + ex.Message;
-                return result;
-            }
+					}
+					
+					if (???????????????????)
+					{
+						string manifestPath = manifestFiles[0];
+						result.ManifestPath = manifestPath;
 
-            // 6. Check that at least one <resource> with a QTI type exists
-            //    Per the QTI 2.2 spec, resource types include "imsqti_item_xmlv2p2",
-            //    "imsqti_item_xmlv2p1", "imsqti_test_xmlv2p2", etc.
-            string manifestDir = Path.GetDirectoryName(result.ManifestPath);
+						XDocument manifestDoc = XDocument.Load(manifestPath);
 
-            var resources = manifestDoc.Root
-                .Descendants()
-                .Where(el => el.Name.LocalName == "resource")
-                .ToList();
+						if (manifestDoc.Root == null)
+						{
+							result.IsValid = false;
+							result.Message = "Validation failed: imsmanifest.xml is empty.";
+						}
+						
+						if (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
+						{
+							result.IsValid = false;
+							result.Message = "Validation failed: root element is not manifest.";
+						}
 
-            if (resources.Count == 0)
-            {
-                result.IsValid = false;
-                result.Message = "Validation failed: no resource elements found in manifest.";
-                return result;
-            }
+                        catch (Exception ex)
+				{
+                            //---(Exception ex)--???
+                            result.IsValid = false;
+                            result.Message = "Validation failed: imsmanifest.xml unable to read." + ex.Message;
+                        }
+                    }
+				}
+			}
 
-            // Filter to QTI-specific resources
-            var qtiResources = resources
-                .Where(r =>
-                {
-                    string type = (string)r.Attribute("type") ?? "";
-                    return type.IndexOf("imsqti", StringComparison.OrdinalIgnoreCase) >= 0;
-                })
-                .ToList();
+			
 
-            if (qtiResources.Count == 0)
-            {
-                result.IsValid = false;
-                result.Message = "Validation failed: no QTI resource entries found in manifest.";
-                return result;
-            }
+			
+			
+			
 
-            // 7. Verify that referenced item files exist on disk
-            foreach (var resource in qtiResources)
-            {
-                string href = (string)resource.Attribute("href");
-                if (string.IsNullOrWhiteSpace(href))
-                    continue;
+			
+        
 
-                string itemPath = Path.Combine(manifestDir, href);
-                if (!File.Exists(itemPath))
-                {
-                    result.IsValid = false;
-                    result.Message = "Validation failed: referenced file '" + href + "' not found on disk.";
-                    return result;
-                }
-            }
 
-            // All checks passed
-            result.IsValid = true;
-            result.Message = "QTI validation passed: manifest valid with "
-                + qtiResources.Count + " QTI resource(s) verified.";
-            return result;
-        }
-    }
-}

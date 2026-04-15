@@ -61,8 +61,11 @@
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.IO.Compression" />
-    <Reference Include="System.IO.Compression.FileSystem" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CodeDom.Providers.DotNetCompilerPlatform">
+      <HintPath>..\packages\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.2.0.1\lib\net45\Microsoft.CodeDom.Providers.DotNetCompilerPlatform.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Global.asax" />
@@ -70,7 +73,6 @@
     <Content Include="QuizOverview.aspx" />
     <Content Include="Scripts\Modal.js" />
     <Content Include="Services\SessionNameGeneratorTesting.txt" />
-    <Content Include="Site.Master" />
     <Content Include="Style\SiteStyle.css" />
     <Content Include="Web.config" />
     <Content Include="Upload.aspx" />
@@ -94,10 +96,10 @@
     <Compile Include="QuizOverview.aspx.designer.cs">
       <DependentUpon>QuizOverview.aspx</DependentUpon>
     </Compile>
-    <Compile Include="Save\SessionCleanup.cs" />
-    <Compile Include="Services\ExportService.cs" />
+    <Compile Include="Save\Save_Edit.cs" />
+    <Compile Include="Save\Save_Zip.cs" />
+    <Compile Include="Save\Session_Clean.cs" />
     <Compile Include="Services\QTI Validation Class1.cs" />
-    <Compile Include="Services\QuestionEditService.cs" />
     <Compile Include="Services\SessionService.cs" />
     <Compile Include="Services\UploadService.cs" />
     <Compile Include="Site.Master.cs">
