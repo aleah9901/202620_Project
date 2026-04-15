@@ -12,8 +12,8 @@ namespace QTI_Editor.WWW
     {
         // This will send the correct cache folder to use that should have the qti file in it.
         private string SessionId => Request.QueryString["id"];
-        private string SessionFolder => Server.MapPath("~/cache/" + SessionId);
-        private string ExtractFolder => System.IO.Path.Combine(SessionFolder, "extract");
+        //private string SessionFolder => Server.MapPath("~/cache/" + SessionId);
+        //private string ExtractFolder => System.IO.Path.Combine(SessionFolder, "extract");
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -31,7 +31,7 @@ namespace QTI_Editor.WWW
         // Reads the quiz title from the manifest and populates the title input
         private void LoadQuizTitle()
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string SessionId = Session["QtiSessionId"] as string;
             var service = new QuestionEditService();
             txtQuizTitle.Text = service.GetQuizTitle(sessionId, Server);
         }
@@ -39,10 +39,10 @@ namespace QTI_Editor.WWW
         // Reads all question items from the manifest and binds them to the Repeater
         private void BindQuestionList()
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string SessionId = Session["QtiSessionId"] as string;
 
             var service = new QuestionEditService();
-            var items   = service.GetManifestItems(sessionId, Server);
+            var items   = service.GetManifestItems(SessionId, Server);
 
             if (items.Count == 0)
             {
@@ -57,9 +57,9 @@ namespace QTI_Editor.WWW
         // Saves the quiz title to the manifest when the input loses focus
         protected void QuizTitle_Changed(object sender, EventArgs e)
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string SessionId = Session["QtiSessionId"] as string;
             var service = new QuestionEditService();
-            service.SetQuizTitle(sessionId, txtQuizTitle.Text.Trim(), Server);
+            service.SetQuizTitle(SessionId, txtQuizTitle.Text.Trim(), Server);
         }
 
         // Fires when an Edit or Remove button is clicked in the question list
@@ -75,9 +75,9 @@ namespace QTI_Editor.WWW
 
             if (e.CommandName == "Remove")
             {
-                string sessionId = Session["QtiSessionId"] as string;
+                string SessionId = Session["QtiSessionId"] as string;
                 var service = new QuestionEditService();
-                service.DeleteQuestion(sessionId, href, Server);
+                service.DeleteQuestion(SessionId, href, Server);
                 BindQuestionList();
             }
         }
@@ -85,7 +85,7 @@ namespace QTI_Editor.WWW
         // Creates a new question item, registers it in the manifest, and opens it for editing
         protected void AddQuestion_Click(object sender, EventArgs e)
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string SessionId = Session["QtiSessionId"] as string;
             string title     = txtNewQuestionTitle.Text.Trim();
 
             if (string.IsNullOrWhiteSpace(title))
@@ -96,7 +96,7 @@ namespace QTI_Editor.WWW
             }
 
             var service = new QuestionEditService();
-            string href = service.CreateNewQuestion(sessionId, title, Server);
+            string href = service.CreateNewQuestion(SessionId, title, Server);
 
             if (string.IsNullOrEmpty(href))
             {
@@ -113,10 +113,10 @@ namespace QTI_Editor.WWW
         // Re-packages the edited extracted content and streams it as a file download
         protected void Export_ZIP(object sender, EventArgs e)
         {
-            string sessionId = Session["QtiSessionId"] as string;
+            string SessionId = Session["QtiSessionId"] as string;
 
             var service = new ExportService();
-            var result  = service.ExportToZip(sessionId, Server);
+            var result  = service.ExportToZip(SessionId, Server);
 
             if (!result.Success)
             {
