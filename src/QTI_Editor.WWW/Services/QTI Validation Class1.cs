@@ -47,9 +47,9 @@ namespace QTI_Editor.WWW
 			try
 			 { 
 				XDocument manifestDoc = XDocument.Load(manifestPath);
-				{
-					if (manifestDoc.Document.Root == null);
-				result.IsValid = false;
+			
+					if (manifestDoc.Root == null);
+	{  result.IsValid = false;
 				result.Message = "QTI validation failed: imsmanifest.xml is empty.";
 			}
 			
