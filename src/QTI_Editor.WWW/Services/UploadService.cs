@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Web;
-using QTI_Editor.WWW.Services;
 
 namespace QTI_Editor.WWW.Services
 {
@@ -82,8 +81,8 @@ namespace QTI_Editor.WWW.Services
             }
 
             // Run QTI 2.2 validation against the extracted content
-            var validator = new QtiValidationService();
-            QtiValidationResult validation = validator.Validate_QTI(extractedPath);
+            var validator = new QTI_verification();
+            QTI_validation_result validation = validator.Validate_QTI(extractedPath);
 
             if (!validation.IsValid)
             {
@@ -116,7 +115,8 @@ namespace QTI_Editor.WWW.Services
             }
             catch
             {
-                
+                // Best-effort cleanup: silently swallowed because the primary
+                // operation already failed and we don't want to mask that error
             }
         }
     }

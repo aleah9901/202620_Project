@@ -14,36 +14,25 @@ namespace QTI_Editor.WWW
     public partial class Site
     {
 
-        /// <summary>
-        /// header control.
-        /// </summary>
+        // header control.
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.ContentPlaceHolder header;
-
-        /// <summary>
-        /// form1 control.
-        /// </summary>
+        // form1 control.
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.HtmlControls.HtmlForm form1;
-
-        /// <summary>
         /// HeaderControls control.
-        /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.ContentPlaceHolder HeaderControls;
-
-        /// <summary>
-        /// MainContent control.
-        /// </summary>
+        // MainContent control.
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.

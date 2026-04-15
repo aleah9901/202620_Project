@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# QTI Editor runtime cache (session data, uploaded ZIPs, extracted packages)
+src/QTI_Editor.WWW/cache/
+
 # Mac File(s)
 *.DS_Store
 
