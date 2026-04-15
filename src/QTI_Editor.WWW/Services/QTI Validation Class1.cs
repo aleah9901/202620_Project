@@ -65,40 +65,6 @@ namespace QTI_Editor.WWW
 					result.Message = "Validation Failed: imsmanifest.xml unable to read.";
 
 				}
-				
-				if ( ????????????????)
-				{
-					string[] manifestFiles = Directory.GetFiles(
-							extractedFolderPath,
-							"imsmanifest.xml",
-							SearchOption.AllDirectories);
-
-					if (manifestFiles.Length == 0)
-					{
-						result.IsValid = false;
-						result.Message = "Validation failed: imsmanifest.xml was not found.";
-
-					}
-					
-					if (???????????????????)
-					{
-						string manifestPath = manifestFiles[0];
-						result.ManifestPath = manifestPath;
-
-						XDocument manifestDoc = XDocument.Load(manifestPath);
-
-						if (manifestDoc.Root == null)
-						{
-							result.IsValid = false;
-							result.Message = "Validation failed: imsmanifest.xml is empty.";
-						}
-						
-						if (manifestDoc.Root.Name.LocalName.ToLower() != "manifest")
-						{
-							result.IsValid = false;
-							result.Message = "Validation failed: root element is not manifest.";
-						}
-
                         catch (Exception ex)
 				{
                             //---(Exception ex)--???
