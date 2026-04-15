@@ -4,7 +4,7 @@ using System.Xml.Linq;
 
 namespace QTI_Editor.WWW
 {	
-	public QTI_validation_result
+	public class QTI_validation_result
 	{
 		public bool IsValid { get; set; }
 		public string Message { get; set; }
@@ -111,17 +111,7 @@ namespace QTI_Editor.WWW
                             result.IsValid = false;
                             result.Message = "Validation failed: imsmanifest.xml unable to read." + ex.Message;
                         }
+		return result;
                     }
 				}
 			}
-
-			
-
-			
-			
-			
-
-			
-        
-
-
