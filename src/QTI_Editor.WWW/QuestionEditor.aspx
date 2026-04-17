@@ -76,12 +76,29 @@
                                 </div>
                             </asp:Panel>
 
-                            <%-- Short answer panel --%>
+                            <%-- Short answer panel: supports multiple correct answers --%>
                                 <asp:Panel ID="pnlShortAnswer" runat="server" Visible="false">
                                     <div class="field-group">
-                                        <label class="field-label">Correct Answer</label>
-                                        <asp:TextBox ID="txtShortAnswer" runat="server" CssClass="field-input"
-                                            placeholder="expected answer..." />
+                                        <label class="field-label">Correct Answers <span
+                                                style="color:#999; font-weight:normal;">(all count as correct)</span></label>
+                                        <asp:Repeater ID="shortAnswerRepeater" runat="server"
+                                            OnItemCommand="shortAnswerRepeater_ItemCommand">
+                                            <ItemTemplate>
+                                                <div class="choice-row">
+                                                    <asp:TextBox ID="txtShortAnswerItem" runat="server"
+                                                        Text='<%# Container.DataItem %>'
+                                                        CssClass="field-input" style="flex:1;"
+                                                        placeholder="correct answer..." />
+                                                    <asp:Button ID="btnRemoveShortAnswer" runat="server"
+                                                        Text="Delete" CssClass="btn btn-sm btn-danger"
+                                                        CommandName="RemoveAnswer"
+                                                        CommandArgument='<%# Container.ItemIndex %>' />
+                                                </div>
+                                            </ItemTemplate>
+                                        </asp:Repeater>
+                                        <asp:Button ID="btnAddShortAnswer" runat="server"
+                                            Text="+ add correct answer" CssClass="btn-link"
+                                            OnClick="AddShortAnswer_Click" />
                                     </div>
                                 </asp:Panel>
 
@@ -105,7 +122,7 @@
                                                 CssClass="btn btn-danger" OnClick="DeleteQuestion_Click"
                                                 OnClientClick="return confirm('Delete this question permanently?');"
                                                 style="margin-right:auto;" />
-                                            <asp:Button ID="btnDiscard" runat="server" Text="Discard" CssClass="btn"
+                                            <asp:Button ID="btnDiscard" runat="server" Text="Discard Changes" CssClass="btn"
                                                 OnClick="Back_Click" />
                                             <asp:Button ID="btnSave" runat="server" Text="Save Changes"
                                                 CssClass="btn btn-primary" OnClick="Save_Question"
