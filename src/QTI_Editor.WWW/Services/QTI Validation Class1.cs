@@ -5,7 +5,7 @@ using System.Xml.Linq;
 
 namespace QTI_Editor.WWW
 {
-    // Holds the outcome of a QTI 2.2 validation pass.
+    // Holds the outcome of a QTI 1.2 validation pass.
     public class QTI_validation_result
     {
         public bool IsValid { get; set; }
@@ -13,7 +13,7 @@ namespace QTI_Editor.WWW
         public string ManifestPath { get; set; }
     }
 
-    // Validates an extracted QTI 2.2 package by locating and parsing imsmanifest.xml.
+    // Validates an extracted QTI 1.2 package by locating and parsing imsmanifest.xml.
     // Also verifies that the manifest contains QTI resource entries and that the
     // referenced item files exist on disk.
     public class QTI_verification
@@ -24,7 +24,7 @@ namespace QTI_Editor.WWW
             return Validate(extractedFolderPath);
         }
 
-        // Validates the extracted folder for QTI 2.2 compliance:
+        // Validates the extracted folder for QTI 1.2 compliance:
         //   1. Folder path is not empty
         //   2. Folder exists on disk
         //   3. imsmanifest.xml is present
@@ -95,9 +95,13 @@ namespace QTI_Editor.WWW
                 return result;
             }
 
-            // 6. Check that at least one <resource> with a QTI type exists
-            //    Per the QTI 2.2 spec, resource types include "imsqti_item_xmlv2p2",
-            //    "imsqti_item_xmlv2p1", "imsqti_test_xmlv2p2", etc.
+            // 6. Check that at least one <resource> with a QTI type exists.
+            //    QTI 1.2 resource types vary by exporter. Common values include:
+            //      "ims_qtiasiv1p2"  (Canvas, Respondus)
+            //      "imsqti_xmlv1p2"
+            //      "imsqti_item_xmlv1p2"
+            //      "imsqti_test_xmlv1p2"
+            //    We match on the substring "qti" to catch all variants.
             string manifestDir = Path.GetDirectoryName(result.ManifestPath);
 
             var resources = manifestDoc.Root
@@ -112,12 +116,12 @@ namespace QTI_Editor.WWW
                 return result;
             }
 
-            // Filter to QTI-specific resources
+            // Filter to QTI-specific resources using broad "qti" substring match
             var qtiResources = resources
                 .Where(r =>
                 {
                     string type = (string)r.Attribute("type") ?? "";
-                    return type.IndexOf("imsqti", StringComparison.OrdinalIgnoreCase) >= 0;
+                    return type.IndexOf("qti", StringComparison.OrdinalIgnoreCase) >= 0;
                 })
                 .ToList();
 
@@ -128,19 +132,38 @@ namespace QTI_Editor.WWW
                 return result;
             }
 
-            // 7. Verify that referenced item files exist on disk
+            // 7. Verify that referenced item files exist on disk.
+            //    QTI 1.2 packages may specify the file via the resource href attribute
+            //    OR via child <file href="..."/> elements (or both).
             foreach (var resource in qtiResources)
             {
+                // Check resource-level href
                 string href = (string)resource.Attribute("href");
-                if (string.IsNullOrWhiteSpace(href))
-                    continue;
-
-                string itemPath = Path.Combine(manifestDir, href);
-                if (!File.Exists(itemPath))
+                if (!string.IsNullOrWhiteSpace(href))
                 {
-                    result.IsValid = false;
-                    result.Message = "Validation failed: referenced file '" + href + "' not found on disk.";
-                    return result;
+                    string itemPath = Path.Combine(manifestDir, href);
+                    if (!File.Exists(itemPath))
+                    {
+                        result.IsValid = false;
+                        result.Message = "Validation failed: referenced file '" + href + "' not found on disk.";
+                        return result;
+                    }
+                }
+
+                // Also check child <file> elements
+                foreach (var fileEl in resource.Elements().Where(el => el.Name.LocalName == "file"))
+                {
+                    string fileHref = (string)fileEl.Attribute("href");
+                    if (!string.IsNullOrWhiteSpace(fileHref))
+                    {
+                        string filePath = Path.Combine(manifestDir, fileHref);
+                        if (!File.Exists(filePath))
+                        {
+                            result.IsValid = false;
+                            result.Message = "Validation failed: referenced file '" + fileHref + "' not found on disk.";
+                            return result;
+                        }
+                    }
                 }
             }
 

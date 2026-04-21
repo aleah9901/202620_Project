@@ -19,7 +19,7 @@ namespace QTI_Editor.WWW.Services
     // 3. Cache directory creation ~/cache/<sessionId>/
     // 4. Save raw ZIP ~/cache/<sessionId>/<sessionId>.zip
     // 5. Extract ZIP ~/cache/<sessionId>/extracted/
-    // 6. QTI 2.2 validation via QtiValidationService
+    // 6. QTI 1.2 validation via QtiValidationService
     // 7. On failure: delete session cache, return error result
     public class UploadService
     {
@@ -80,7 +80,7 @@ namespace QTI_Editor.WWW.Services
                 return Fail("Could not extract ZIP file. The file may be corrupt or password-protected. " + ex.Message);
             }
 
-            // Run QTI 2.2 validation against the extracted content
+            // Run QTI 1.2 validation against the extracted content
             var validator = new QTI_verification();
             QTI_validation_result validation = validator.Validate_QTI(extractedPath);
 

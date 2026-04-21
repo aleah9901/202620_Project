@@ -16,14 +16,17 @@ namespace QTI_Editor.WWW
         public string Type { get; set; }
     }
 
-    // Service for reading and modifying QTI 2.2 manifest and assessment items.
+    // Service for reading and modifying QTI 1.2 manifest and assessment items.
+    // QTI 1.2 uses <questestinterop> as the root element with <item> children
+    // nested under optional <assessment><section> wrappers.
     // Used by QuizOverview.aspx.cs for listing, adding, and removing questions.
     public class QuestionEditService
     {
         // Returns the quiz title. Checks:
         // 1. organization > title in manifest
-        // 2. The assessmentTest file's title attribute (referenced by the test resource)
-        // 3. Manifest identifier attribute
+        // 2. LOM metadata > general > title > string in manifest
+        // 3. The assessment title attribute inside the QTI XML file
+        // 4. Manifest identifier attribute
         // Falls back to "Untitled Quiz" if none found.
         public string GetQuizTitle(string sessionId, HttpServerUtility server)
         {
@@ -40,38 +43,56 @@ namespace QTI_Editor.WWW
             if (orgTitle != null && !string.IsNullOrWhiteSpace(orgTitle.Value))
                 return orgTitle.Value.Trim();
 
-            // 2. Look for the assessmentTest file and read its title attribute
+            // 2. Look for LOM metadata > general > title > string
+            //    QTI 1.2 manifests often store the title in <imsmd:lom><imsmd:general><imsmd:title><imsmd:string>
+            XElement metadataTitle = manifest.Root
+                .Descendants()
+                .Where(el => el.Name.LocalName == "general")
+                .SelectMany(g => g.Elements().Where(el => el.Name.LocalName == "title"))
+                .SelectMany(t => t.Elements().Where(el => el.Name.LocalName == "string"))
+                .FirstOrDefault();
+
+            if (metadataTitle != null && !string.IsNullOrWhiteSpace(metadataTitle.Value))
+                return metadataTitle.Value.Trim();
+
+            // 3. Look for the assessment element inside a QTI XML file and read its title
             string manifestPath = GetManifestPath(sessionId, server);
             if (manifestPath != null)
             {
                 string manifestDir = Path.GetDirectoryName(manifestPath);
-                var testResource = manifest.Root
+                var qtiResource = manifest.Root
                     .Descendants()
                     .FirstOrDefault(el => el.Name.LocalName == "resource"
-                        && ((string)el.Attribute("type") ?? "").IndexOf("imsqti_test", StringComparison.OrdinalIgnoreCase) >= 0);
+                        && ((string)el.Attribute("type") ?? "").IndexOf("qti", StringComparison.OrdinalIgnoreCase) >= 0);
 
-                if (testResource != null)
+                if (qtiResource != null)
                 {
-                    string testHref = (string)testResource.Attribute("href");
-                    if (!string.IsNullOrEmpty(testHref))
+                    string qtiHref = (string)qtiResource.Attribute("href");
+                    if (!string.IsNullOrEmpty(qtiHref))
                     {
-                        string testPath = Path.Combine(manifestDir, testHref);
-                        if (File.Exists(testPath))
+                        string qtiPath = Path.Combine(manifestDir, qtiHref);
+                        if (File.Exists(qtiPath))
                         {
                             try
                             {
-                                XDocument testDoc = XDocument.Load(testPath);
-                                string testTitle = (string)testDoc.Root?.Attribute("title");
-                                if (!string.IsNullOrWhiteSpace(testTitle))
-                                    return testTitle.Trim();
+                                XDocument qtiDoc = XDocument.Load(qtiPath);
+                                // Look for <assessment title="...">
+                                XElement assessment = qtiDoc.Descendants()
+                                    .FirstOrDefault(el => el.Name.LocalName == "assessment");
+                                if (assessment != null)
+                                {
+                                    string assessTitle = (string)assessment.Attribute("title");
+                                    if (!string.IsNullOrWhiteSpace(assessTitle))
+                                        return assessTitle.Trim();
+                                }
                             }
-                            catch { /* ignore unreadable test files */ }
+                            catch { /* ignore unreadable files */ }
                         }
                     }
                 }
             }
 
-            // 3. Fallback: manifest identifier
+            // 4. Fallback: manifest identifier
             string manifestId = (string)manifest.Root.Attribute("identifier");
             if (!string.IsNullOrEmpty(manifestId) && manifestId != "MANIFEST-QTI-TEST-TITLE")
                 return manifestId.Trim();
@@ -80,8 +101,9 @@ namespace QTI_Editor.WWW
         }
 
         // Sets the quiz title. Writes to:
-        // 1. The assessmentTest file's title attribute (if it exists)
-        // 2. Creates organization > title in manifest if no test file exists
+        // 1. LOM metadata > general > title > string in manifest
+        // 2. The <assessment title="..."> attribute in the QTI XML file
+        // 3. Creates organization > title in manifest if no other location exists
         public void SetQuizTitle(string sessionId, string title, HttpServerUtility server)
         {
             string manifestPath = GetManifestPath(sessionId, server);
@@ -90,33 +112,52 @@ namespace QTI_Editor.WWW
             string manifestDir = Path.GetDirectoryName(manifestPath);
             XDocument manifest = XDocument.Load(manifestPath);
 
-            // 1. Try to write to the assessmentTest file
-            var testResource = manifest.Root
+            // 1. Try to write to LOM metadata > general > title > string
+            XElement metadataTitle = manifest.Root
+                .Descendants()
+                .Where(el => el.Name.LocalName == "general")
+                .SelectMany(g => g.Elements().Where(el => el.Name.LocalName == "title"))
+                .SelectMany(t => t.Elements().Where(el => el.Name.LocalName == "string"))
+                .FirstOrDefault();
+
+            if (metadataTitle != null)
+            {
+                metadataTitle.Value = title;
+                manifest.Save(manifestPath);
+            }
+
+            // 2. Try to write to the assessment element in the QTI XML file
+            var qtiResource = manifest.Root
                 .Descendants()
                 .FirstOrDefault(el => el.Name.LocalName == "resource"
-                    && ((string)el.Attribute("type") ?? "").IndexOf("imsqti_test", StringComparison.OrdinalIgnoreCase) >= 0);
+                    && ((string)el.Attribute("type") ?? "").IndexOf("qti", StringComparison.OrdinalIgnoreCase) >= 0);
 
-            if (testResource != null)
+            if (qtiResource != null)
             {
-                string testHref = (string)testResource.Attribute("href");
-                if (!string.IsNullOrEmpty(testHref))
+                string qtiHref = (string)qtiResource.Attribute("href");
+                if (!string.IsNullOrEmpty(qtiHref))
                 {
-                    string testPath = Path.Combine(manifestDir, testHref);
-                    if (File.Exists(testPath))
+                    string qtiPath = Path.Combine(manifestDir, qtiHref);
+                    if (File.Exists(qtiPath))
                     {
                         try
                         {
-                            XDocument testDoc = XDocument.Load(testPath);
-                            testDoc.Root.SetAttributeValue("title", title);
-                            testDoc.Save(testPath);
-                            return;
+                            XDocument qtiDoc = XDocument.Load(qtiPath);
+                            XElement assessment = qtiDoc.Descendants()
+                                .FirstOrDefault(el => el.Name.LocalName == "assessment");
+                            if (assessment != null)
+                            {
+                                assessment.SetAttributeValue("title", title);
+                                qtiDoc.Save(qtiPath);
+                                return;
+                            }
                         }
                         catch { /* fall through to manifest approach */ }
                     }
                 }
             }
 
-            // 2. Fallback: write to organization > title in manifest
+            // 3. Fallback: write to organization > title in manifest
             XElement orgTitle = manifest.Root
                 .Descendants()
                 .Where(el => el.Name.LocalName == "organization")
@@ -143,8 +184,11 @@ namespace QTI_Editor.WWW
             manifest.Save(manifestPath);
         }
 
-        // Returns only item resources from the manifest (filters out test resources).
-        // Per QTI 2.2, items have type="imsqti_item_xmlv2p2" or "imsqti_item_xmlv2p1".
+        // Returns all question item elements from the QTI 1.2 XML files.
+        // QTI 1.2 often stores multiple items in a single XML file under
+        // <questestinterop><assessment><section><item>... or directly as
+        // <questestinterop><item>...
+        // Each <item> becomes a ManifestItem with Href = "filename.xml#ITEM_IDENT"
         public List<ManifestItem> GetManifestItems(string sessionId, HttpServerUtility server)
         {
             var items = new List<ManifestItem>();
@@ -155,111 +199,151 @@ namespace QTI_Editor.WWW
             string manifestPath = GetManifestPath(sessionId, server);
             string manifestDir = manifestPath != null ? Path.GetDirectoryName(manifestPath) : null;
 
-            // Look for <resource> elements with item type only (not test type)
+            // Find all <resource> elements with QTI type (broad "qti" substring match)
             var resources = manifest.Root
                 .Descendants()
                 .Where(el => el.Name.LocalName == "resource"
-                    && ((string)el.Attribute("type") ?? "").IndexOf("imsqti_item", StringComparison.OrdinalIgnoreCase) >= 0);
+                    && ((string)el.Attribute("type") ?? "").IndexOf("qti", StringComparison.OrdinalIgnoreCase) >= 0);
 
             foreach (XElement res in resources)
             {
-                string href = (string)res.Attribute("href") ?? string.Empty;
+                string resHref = (string)res.Attribute("href") ?? string.Empty;
                 string type = (string)res.Attribute("type") ?? string.Empty;
-                string identifier = (string)res.Attribute("identifier") ?? string.Empty;
 
-                // Get display title: prefer question text from <p> in itemBody for usability
-                string title = identifier;
+                if (manifestDir == null || string.IsNullOrEmpty(resHref))
+                    continue;
 
-                if (manifestDir != null && !string.IsNullOrEmpty(href))
+                string xmlPath = Path.Combine(manifestDir, resHref);
+                if (!File.Exists(xmlPath))
+                    continue;
+
+                try
                 {
-                    string itemPath = Path.Combine(manifestDir, href);
-                    if (File.Exists(itemPath))
+                    XDocument qtiDoc = XDocument.Load(xmlPath);
+
+                    // Find all <item> elements at any depth (handles assessment/section nesting)
+                    var itemElements = qtiDoc.Descendants()
+                        .Where(el => el.Name.LocalName == "item")
+                        .ToList();
+
+                    foreach (XElement itemEl in itemElements)
                     {
-                        try
+                        string ident = (string)itemEl.Attribute("ident") ?? "";
+                        string itemTitle = (string)itemEl.Attribute("title") ?? ident;
+
+                        // Try to get question text from <presentation><material><mattext>
+                        string questionText = null;
+                        XElement presentation = itemEl.Elements()
+                            .FirstOrDefault(el => el.Name.LocalName == "presentation");
+                        if (presentation != null)
                         {
-                            XDocument itemDoc = XDocument.Load(itemPath);
-                            XElement itemRoot = itemDoc.Root;
-
-                            // Try to get question text from the first <p> in itemBody
-                            string questionText = null;
-                            XElement body = itemRoot.Elements()
-                                .FirstOrDefault(el => el.Name.LocalName == "itemBody");
-                            if (body != null)
-                            {
-                                XElement firstP = body.Elements()
-                                    .FirstOrDefault(el => el.Name.LocalName == "p");
-                                if (firstP != null && !string.IsNullOrWhiteSpace(firstP.Value))
-                                    questionText = firstP.Value.Trim();
-                            }
-
-                            // Use question text if available, otherwise fall back to title attribute
-                            if (!string.IsNullOrEmpty(questionText))
-                                title = questionText;
-                            else
-                            {
-                                string itemTitle = (string)itemRoot.Attribute("title");
-                                if (!string.IsNullOrEmpty(itemTitle))
-                                    title = itemTitle.Trim();
-                            }
+                            XElement mattext = presentation.Descendants()
+                                .FirstOrDefault(el => el.Name.LocalName == "mattext");
+                            if (mattext != null && !string.IsNullOrWhiteSpace(mattext.Value))
+                                questionText = mattext.Value.Trim();
                         }
-                        catch { /* use identifier as fallback */ }
+
+                        // Use question text for display if available, else item title
+                        string displayTitle = !string.IsNullOrEmpty(questionText)
+                            ? questionText
+                            : itemTitle;
+
+                        // Href uses compound key: filename#ident for multi-item files
+                        string compoundHref = resHref + "#" + ident;
+
+                        items.Add(new ManifestItem
+                        {
+                            Identifier = ident,
+                            Title = displayTitle,
+                            Href = compoundHref,
+                            Type = type
+                        });
                     }
                 }
-
-                items.Add(new ManifestItem
-                {
-                    Identifier = identifier,
-                    Title = title,
-                    Href = href,
-                    Type = type
-                });
+                catch { /* skip unreadable files */ }
             }
 
             return items;
         }
 
-        // Removes a question resource from the manifest and deletes the item XML file.
+        // Removes a question item from the QTI XML file and cleans up.
+        // QTI 1.2 may have multiple items in one file, so we remove just the
+        // matching <item> element. If the file then has no items, we remove
+        // the resource from the manifest and delete the file.
         public void DeleteQuestion(string sessionId, string href, HttpServerUtility server)
         {
             string manifestPath = GetManifestPath(sessionId, server);
             if (manifestPath == null) return;
 
-            XDocument manifest = XDocument.Load(manifestPath);
             string manifestDir = Path.GetDirectoryName(manifestPath);
 
-            var resource = manifest.Root
-                .Descendants()
-                .FirstOrDefault(el => el.Name.LocalName == "resource"
-                    && (string)el.Attribute("href") == href);
-
-            if (resource != null)
+            // Parse compound href: "filename.xml#ITEM_IDENT"
+            string filePart = href;
+            string itemIdent = null;
+            if (href.Contains("#"))
             {
-                // Also remove any <dependency> referencing this resource
-                string resId = (string)resource.Attribute("identifier");
-                if (!string.IsNullOrEmpty(resId))
-                {
-                    var deps = manifest.Root
-                        .Descendants()
-                        .Where(el => el.Name.LocalName == "dependency"
-                            && (string)el.Attribute("identifierref") == resId)
-                        .ToList();
-                    foreach (var dep in deps)
-                        dep.Remove();
-                }
-
-                resource.Remove();
-                manifest.Save(manifestPath);
+                string[] parts = href.Split(new[] { '#' }, 2);
+                filePart = parts[0];
+                itemIdent = parts[1];
             }
 
-            // Delete the actual file
-            string filePath = Path.Combine(manifestDir, href);
-            if (File.Exists(filePath))
-                File.Delete(filePath);
+            string xmlPath = Path.Combine(manifestDir, filePart);
+            if (!File.Exists(xmlPath)) return;
+
+            try
+            {
+                XDocument qtiDoc = XDocument.Load(xmlPath);
+
+                // Find and remove the specific <item>
+                XElement targetItem = null;
+                if (!string.IsNullOrEmpty(itemIdent))
+                {
+                    targetItem = qtiDoc.Descendants()
+                        .FirstOrDefault(el => el.Name.LocalName == "item"
+                            && (string)el.Attribute("ident") == itemIdent);
+                }
+                else
+                {
+                    targetItem = qtiDoc.Descendants()
+                        .FirstOrDefault(el => el.Name.LocalName == "item");
+                }
+
+                if (targetItem != null)
+                    targetItem.Remove();
+
+                // Check if any items remain in the file
+                bool hasRemainingItems = qtiDoc.Descendants()
+                    .Any(el => el.Name.LocalName == "item");
+
+                if (hasRemainingItems)
+                {
+                    // Save the file with the item removed
+                    qtiDoc.Save(xmlPath);
+                }
+                else
+                {
+                    // No more items: delete the file and remove from manifest
+                    File.Delete(xmlPath);
+
+                    XDocument manifest = XDocument.Load(manifestPath);
+                    var resource = manifest.Root
+                        .Descendants()
+                        .FirstOrDefault(el => el.Name.LocalName == "resource"
+                            && (string)el.Attribute("href") == filePart);
+
+                    if (resource != null)
+                    {
+                        resource.Remove();
+                        manifest.Save(manifestPath);
+                    }
+                }
+            }
+            catch { /* best-effort removal */ }
         }
 
-        // Creates a new assessment item XML file and registers it in the manifest.
-        // Generates valid QTI 2.2 with the correct interaction element based on questionType.
-        // Returns the href of the new item, or null on failure.
+        // Creates a new QTI 1.2 assessment item XML file and registers it in the manifest.
+        // Generates valid QTI 1.2 with the correct interaction elements based on questionType.
+        // Returns the compound href (filename#ident) of the new item, or null on failure.
         public string CreateNewQuestion(string sessionId, string title, string questionType, HttpServerUtility server)
         {
             string manifestPath = GetManifestPath(sessionId, server);
@@ -267,127 +351,115 @@ namespace QTI_Editor.WWW
 
             string manifestDir = Path.GetDirectoryName(manifestPath);
 
-            // Check if an items/ subdirectory exists (common QTI package pattern)
-            string itemsDir = Path.Combine(manifestDir, "items");
-            string subDir = Directory.Exists(itemsDir) ? "items" : "";
-
             string identifier = "item_" + Guid.NewGuid().ToString("N").Substring(0, 8);
             string fileName = identifier + ".xml";
-            string relativeHref = string.IsNullOrEmpty(subDir) ? fileName : subDir + "/" + fileName;
+            string relativeHref = fileName;
             string filePath = Path.Combine(manifestDir, relativeHref);
 
-            // Ensure directory exists
-            string fileDir = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(fileDir))
-                Directory.CreateDirectory(fileDir);
+            // Build QTI 1.2 <item> element
+            var item = new XElement("item",
+                new XAttribute("ident", identifier),
+                new XAttribute("title", title));
 
-            // Build the QTI 2.2 assessment item
-            XNamespace qtiNs = "http://www.imsglobal.org/xsd/imsqti_v2p2";
+            // Build <presentation> with question text and appropriate interaction
+            var presentation = new XElement("presentation");
+            var flow = new XElement("flow");
 
-            // Determine responseDeclaration baseType and cardinality based on question type
-            string baseType = "identifier";
-            string cardinality = "single";
-            string rpTemplate = "http://www.imsglobal.org/question/qti_v2p2/rptemplates/match_correct";
-
-            if (questionType == "MultiSelect")
-            {
-                cardinality = "multiple";
-                rpTemplate = "http://www.imsglobal.org/question/qti_v2p2/rptemplates/map_response";
-            }
-            else if (questionType == "ShortAnswer")
-            {
-                baseType = "string";
-                rpTemplate = "http://www.imsglobal.org/question/qti_v2p2/rptemplates/map_response";
-            }
-            else if (questionType == "LongFormEssay" || questionType == "FileUpload")
-            {
-                baseType = questionType == "FileUpload" ? "file" : "string";
-                rpTemplate = null; // No automated scoring
-            }
-
-            // Build the root assessmentItem
-            var root = new XElement(qtiNs + "assessmentItem",
-                new XAttribute("identifier", identifier),
-                new XAttribute("title", title),
-                new XAttribute("adaptive", "false"),
-                new XAttribute("timeDependent", "false"));
-
-            // responseDeclaration
-            root.Add(new XElement(qtiNs + "responseDeclaration",
-                new XAttribute("identifier", "RESPONSE"),
-                new XAttribute("cardinality", cardinality),
-                new XAttribute("baseType", baseType)));
-
-            // outcomeDeclaration
-            root.Add(new XElement(qtiNs + "outcomeDeclaration",
-                new XAttribute("identifier", "SCORE"),
-                new XAttribute("cardinality", "single"),
-                new XAttribute("baseType", "float"),
-                new XElement(qtiNs + "defaultValue",
-                    new XElement(qtiNs + "value", "0"))));
-
-            // itemBody with the correct interaction per QTI 2.2 spec
-            var itemBody = new XElement(qtiNs + "itemBody",
-                new XElement(qtiNs + "p", "Enter question text here."));
+            // Question text
+            flow.Add(new XElement("material",
+                new XElement("mattext", "Enter question text here.")));
 
             switch (questionType)
             {
                 case "MultipleChoice":
-                    itemBody.Add(new XElement(qtiNs + "choiceInteraction",
-                        new XAttribute("responseIdentifier", "RESPONSE"),
-                        new XAttribute("shuffle", "false"),
-                        new XAttribute("maxChoices", "1"),
-                        new XElement(qtiNs + "simpleChoice",
-                            new XAttribute("identifier", "CHOICE-A"), "Option A"),
-                        new XElement(qtiNs + "simpleChoice",
-                            new XAttribute("identifier", "CHOICE-B"), "Option B")));
+                    flow.Add(BuildResponseLid(identifier, "Single",
+                        new[] { "CHOICE-A", "CHOICE-B" },
+                        new[] { "Option A", "Option B" }));
                     break;
 
                 case "MultiSelect":
-                    itemBody.Add(new XElement(qtiNs + "choiceInteraction",
-                        new XAttribute("responseIdentifier", "RESPONSE"),
-                        new XAttribute("shuffle", "false"),
-                        new XAttribute("maxChoices", "0"),
-                        new XElement(qtiNs + "simpleChoice",
-                            new XAttribute("identifier", "CHOICE-A"), "Option A"),
-                        new XElement(qtiNs + "simpleChoice",
-                            new XAttribute("identifier", "CHOICE-B"), "Option B")));
+                    flow.Add(BuildResponseLid(identifier, "Multiple",
+                        new[] { "CHOICE-A", "CHOICE-B" },
+                        new[] { "Option A", "Option B" }));
                     break;
 
                 case "ShortAnswer":
-                    itemBody.Add(new XElement(qtiNs + "textEntryInteraction",
-                        new XAttribute("responseIdentifier", "RESPONSE"),
-                        new XAttribute("expectedLength", "100")));
+                    flow.Add(new XElement("response_str",
+                        new XAttribute("ident", "RESPONSE"),
+                        new XAttribute("rcardinality", "Single"),
+                        new XElement("render_fib",
+                            new XElement("response_label",
+                                new XAttribute("ident", "answer")))));
                     break;
 
                 case "LongFormEssay":
-                    itemBody.Add(new XElement(qtiNs + "extendedTextInteraction",
-                        new XAttribute("responseIdentifier", "RESPONSE"),
-                        new XAttribute("expectedLines", "10")));
+                    flow.Add(new XElement("response_str",
+                        new XAttribute("ident", "RESPONSE"),
+                        new XAttribute("rcardinality", "Single"),
+                        new XElement("render_fib",
+                            new XAttribute("rows", "10"),
+                            new XAttribute("columns", "60"),
+                            new XElement("response_label",
+                                new XAttribute("ident", "answer")))));
                     break;
 
                 case "FileUpload":
-                    itemBody.Add(new XElement(qtiNs + "uploadInteraction",
-                        new XAttribute("responseIdentifier", "RESPONSE")));
+                    // QTI 1.2 has no native file upload; use essay with instruction
+                    flow.Add(new XElement("material",
+                        new XElement("mattext", "Upload a file with your response.")));
+                    flow.Add(new XElement("response_str",
+                        new XAttribute("ident", "RESPONSE"),
+                        new XAttribute("rcardinality", "Single"),
+                        new XElement("render_fib",
+                            new XAttribute("rows", "5"),
+                            new XAttribute("columns", "60"),
+                            new XElement("response_label",
+                                new XAttribute("ident", "answer")))));
                     break;
 
                 case "NumericalRange":
-                    itemBody.Add(new XElement(qtiNs + "textEntryInteraction",
-                        new XAttribute("responseIdentifier", "RESPONSE"),
-                        new XAttribute("expectedLength", "20")));
+                    flow.Add(new XElement("response_str",
+                        new XAttribute("ident", "RESPONSE"),
+                        new XAttribute("rcardinality", "Single"),
+                        new XElement("render_fib",
+                            new XElement("response_label",
+                                new XAttribute("ident", "answer")))));
                     break;
             }
 
-            root.Add(itemBody);
+            presentation.Add(flow);
+            item.Add(presentation);
 
-            // responseProcessing (per spec: template URI for auto-scored, empty for manual)
-            if (rpTemplate != null)
-                root.Add(new XElement(qtiNs + "responseProcessing",
-                    new XAttribute("template", rpTemplate)));
-            else
-                root.Add(new XElement(qtiNs + "responseProcessing"));
+            // Build <resprocessing> for scoring
+            var resprocessing = new XElement("resprocessing",
+                new XElement("outcomes",
+                    new XElement("decvar",
+                        new XAttribute("varname", "SCORE"),
+                        new XAttribute("vartype", "Decimal"),
+                        new XAttribute("defaultval", "0"))));
 
-            var itemDoc = new XDocument(root);
+            // Add a default correct-answer condition for MC/MS
+            if (questionType == "MultipleChoice" || questionType == "MultiSelect")
+            {
+                resprocessing.Add(new XElement("respcondition",
+                    new XAttribute("title", "Correct"),
+                    new XElement("conditionvar",
+                        new XElement("varequal",
+                            new XAttribute("respident", "RESPONSE"),
+                            "CHOICE-A")),
+                    new XElement("setvar",
+                        new XAttribute("varname", "SCORE"),
+                        new XAttribute("action", "Set"),
+                        "1")));
+            }
+
+            item.Add(resprocessing);
+
+            // Wrap in <questestinterop>
+            var root = new XElement("questestinterop", item);
+            var itemDoc = new XDocument(
+                new XDeclaration("1.0", "UTF-8", null),
+                root);
             itemDoc.Save(filePath);
 
             // Register in the manifest
@@ -401,27 +473,39 @@ namespace QTI_Editor.WWW
                 XElement newResource = new XElement(
                     resources.Name.Namespace + "resource",
                     new XAttribute("identifier", identifier),
-                    new XAttribute("type", "imsqti_item_xmlv2p2"),
+                    new XAttribute("type", "imsqti_item_xmlv1p2"),
                     new XAttribute("href", relativeHref),
                     new XElement(resources.Name.Namespace + "file",
                         new XAttribute("href", relativeHref)));
                 resources.Add(newResource);
-
-                // Add dependency to the test resource if one exists
-                var testResource = resources.Elements()
-                    .FirstOrDefault(el => el.Name.LocalName == "resource"
-                        && ((string)el.Attribute("type") ?? "").IndexOf("imsqti_test", StringComparison.OrdinalIgnoreCase) >= 0);
-                if (testResource != null)
-                {
-                    testResource.Add(new XElement(
-                        resources.Name.Namespace + "dependency",
-                        new XAttribute("identifierref", identifier)));
-                }
-
                 manifest.Save(manifestPath);
             }
 
-            return relativeHref;
+            // Return compound href
+            return relativeHref + "#" + identifier;
+        }
+
+        // Builds a <response_lid> element with <render_choice> for MC/MS questions
+        private XElement BuildResponseLid(string itemIdent, string cardinality,
+            string[] choiceIds, string[] choiceTexts)
+        {
+            var responseLid = new XElement("response_lid",
+                new XAttribute("ident", "RESPONSE"),
+                new XAttribute("rcardinality", cardinality));
+
+            var renderChoice = new XElement("render_choice",
+                new XAttribute("shuffle", "No"));
+
+            for (int i = 0; i < choiceIds.Length; i++)
+            {
+                renderChoice.Add(new XElement("response_label",
+                    new XAttribute("ident", choiceIds[i]),
+                    new XElement("material",
+                        new XElement("mattext", choiceTexts[i]))));
+            }
+
+            responseLid.Add(renderChoice);
+            return responseLid;
         }
 
 

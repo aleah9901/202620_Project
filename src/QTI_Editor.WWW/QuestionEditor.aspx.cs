@@ -10,16 +10,7 @@ namespace QTI_Editor.WWW
 {
     public partial class QuestionEditor : System.Web.UI.Page
     {
-        // Supported QTI namespaces — spec requires v2.1 support alongside v2.2
-        private static readonly XNamespace QtiNs22 = "http://www.imsglobal.org/xsd/imsqti_v2p2";
-        private static readonly XNamespace QtiNs21 = "http://www.imsglobal.org/xsd/imsqti_v2p1";
-
-        // The namespace detected from the current document (set during load)
-        private XNamespace ActiveQtiNs
-        {
-            get { return (XNamespace)((string)ViewState["ActiveQtiNs"] ?? QtiNs22.NamespaceName); }
-            set { ViewState["ActiveQtiNs"] = value.NamespaceName; }
-        }
+        // QTI 1.2 uses no XML namespace for item elements (elements are unqualified)
 
         // Enumeration of question types
         private enum QuestionType
@@ -117,7 +108,7 @@ namespace QTI_Editor.WWW
             }
         }
 
-        // Saves the current question data back to the QTI XML file.    
+        // Saves the current question data back to the QTI 1.2 XML file.    
         protected void Save_Question(object sender, EventArgs e)
         {
             string sessionId = (string)Session["QtiSessionId"];
@@ -136,38 +127,45 @@ namespace QTI_Editor.WWW
                 return;
             }
 
+            // Parse compound href to get item ident
+            string itemIdent = null;
+            if (href.Contains("#"))
+                itemIdent = href.Split(new[] { '#' }, 2)[1];
+
             try
             {
                 XDocument doc = XDocument.Load(filePath);
-                XElement root = doc.Root;
-                XNamespace ns = ActiveQtiNs;
 
-                // Update title attribute
-                root.SetAttributeValue("title", txtTitle.Text.Trim());
-
-                // Get or create itemBody
-                XElement itemBody = root.Elements(ns + "itemBody").FirstOrDefault();
-                if (itemBody == null)
+                // Find the target <item> element
+                XElement item = FindItemElement(doc, itemIdent);
+                if (item == null)
                 {
-                    itemBody = new XElement(ns + "itemBody");
-                    root.Add(itemBody);
+                    ShowError("Could not locate item element in QTI file.");
+                    return;
                 }
 
-                // Update question prompt text — write to <p> element within itemBody
-                XElement pElement = itemBody.Elements(ns + "p").FirstOrDefault();
-                if (pElement == null)
-                {
-                    pElement = new XElement(ns + "p");
-                    itemBody.AddFirst(pElement);
-                }
-                pElement.Value = txtQuestionText.Text.Trim();
+                // Update title attribute on <item>
+                item.SetAttributeValue("title", txtTitle.Text.Trim());
 
-                // Also update <prompt> inside any interaction if one existed
-                XElement prompt = itemBody.Descendants(ns + "prompt").FirstOrDefault();
-                if (prompt != null)
+                // Get or create <presentation><flow>
+                XElement presentation = item.Elements()
+                    .FirstOrDefault(el => el.Name.LocalName == "presentation");
+                if (presentation == null)
                 {
-                    prompt.Value = txtQuestionText.Text.Trim();
+                    presentation = new XElement("presentation");
+                    item.AddFirst(presentation);
                 }
+
+                XElement flow = presentation.Elements()
+                    .FirstOrDefault(el => el.Name.LocalName == "flow");
+                if (flow == null)
+                {
+                    flow = new XElement("flow");
+                    presentation.Add(flow);
+                }
+
+                // Update question text in the first <material><mattext>
+                UpdateQuestionText(flow, txtQuestionText.Text.Trim());
 
                 // Save type-specific data
                 string selectedType = ddlType.SelectedValue;
@@ -175,15 +173,16 @@ namespace QTI_Editor.WWW
                 if (selectedType == "MultipleChoice" || selectedType == "MultiSelect")
                 {
                     CollectChoicesFromRepeater();
-                    SaveChoiceInteraction(root, itemBody, ns, selectedType);
+                    SaveChoiceData(item, flow, selectedType);
                 }
                 else if (selectedType == "ShortAnswer")
                 {
-                    SaveShortAnswer(root, itemBody, ns);
+                    CollectShortAnswersFromRepeater();
+                    SaveShortAnswerData(item, flow);
                 }
                 else if (selectedType == "NumericalRange")
                 {
-                    SaveNumericalRange(root, itemBody, ns);
+                    SaveNumericalRangeData(item, flow);
                 }
 
                 doc.Save(filePath);
@@ -210,124 +209,136 @@ namespace QTI_Editor.WWW
             Response.Redirect("~/QuizOverview.aspx");
         }
 
-        // ----- Save helpers -----
+        // ----- Save helpers for QTI 1.2 -----
 
-        // Saves multiple-choice / multi-select answer data to the QTI XML
-        private void SaveChoiceInteraction(XElement root, XElement itemBody, XNamespace ns, string selectedType)
+        // Updates the first <material><mattext> within the flow element
+        private void UpdateQuestionText(XElement flow, string text)
         {
-            XElement choiceInteraction = itemBody.Descendants(ns + "choiceInteraction").FirstOrDefault();
-            if (choiceInteraction == null)
+            // Find the first <material> that is a direct child (the question text, not inside a response_label)
+            XElement material = flow.Elements()
+                .FirstOrDefault(el => el.Name.LocalName == "material");
+
+            if (material == null)
             {
-                choiceInteraction = new XElement(ns + "choiceInteraction",
-                    new XAttribute("responseIdentifier", "RESPONSE"),
-                    new XAttribute("shuffle", "false"),
-                    new XAttribute("maxChoices", selectedType == "MultiSelect" ? "0" : "1"));
-                itemBody.Add(choiceInteraction);
+                material = new XElement("material",
+                    new XElement("mattext", text));
+                flow.AddFirst(material);
+                return;
+            }
+
+            XElement mattext = material.Elements()
+                .FirstOrDefault(el => el.Name.LocalName == "mattext");
+            if (mattext == null)
+            {
+                material.Add(new XElement("mattext", text));
             }
             else
             {
-                choiceInteraction.SetAttributeValue("maxChoices", selectedType == "MultiSelect" ? "0" : "1");
+                mattext.Value = text;
             }
+        }
 
-            // Replace all simpleChoice elements
-            choiceInteraction.Elements(ns + "simpleChoice").Remove();
+        // Saves MC/MS data: rebuilds <response_lid><render_choice> and <resprocessing>
+        private void SaveChoiceData(XElement item, XElement flow, string selectedType)
+        {
+            string cardinality = selectedType == "MultiSelect" ? "Multiple" : "Single";
+
+            // Remove existing response_lid
+            flow.Elements().Where(el => el.Name.LocalName == "response_lid").Remove();
+
+            // Build new response_lid with render_choice
+            var responseLid = new XElement("response_lid",
+                new XAttribute("ident", "RESPONSE"),
+                new XAttribute("rcardinality", cardinality));
+
+            var renderChoice = new XElement("render_choice",
+                new XAttribute("shuffle", "No"));
+
             foreach (var choice in Choices)
             {
-                choiceInteraction.Add(new XElement(ns + "simpleChoice",
-                    new XAttribute("identifier", choice.Identifier),
-                    choice.Text));
+                renderChoice.Add(new XElement("response_label",
+                    new XAttribute("ident", choice.Identifier),
+                    new XElement("material",
+                        new XElement("mattext", choice.Text))));
             }
 
-            // Update responseDeclaration with correct answers
-            UpdateCorrectResponse(root, ns, Choices.Where(c => c.IsCorrect).Select(c => c.Identifier).ToList());
+            responseLid.Add(renderChoice);
+            flow.Add(responseLid);
+
+            // Rebuild resprocessing with correct answers
+            RebuildResprocessing(item,
+                Choices.Where(c => c.IsCorrect).Select(c => c.Identifier).ToList());
         }
 
-        // Saves short-answer data to the QTI XML, including mapping for multiple correct answers
-        private void SaveShortAnswer(XElement root, XElement itemBody, XNamespace ns)
+        // Saves short answer data: rebuilds <response_str><render_fib> and <resprocessing>
+        private void SaveShortAnswerData(XElement item, XElement flow)
         {
-            XElement textEntry = itemBody.Descendants(ns + "textEntryInteraction").FirstOrDefault();
-            if (textEntry == null)
-            {
-                textEntry = new XElement(ns + "textEntryInteraction",
-                    new XAttribute("responseIdentifier", "RESPONSE"));
-                itemBody.Add(textEntry);
-            }
+            // Remove existing response_str
+            flow.Elements().Where(el => el.Name.LocalName == "response_str").Remove();
 
-            CollectShortAnswersFromRepeater();
+            // Build new response_str with render_fib
+            flow.Add(new XElement("response_str",
+                new XAttribute("ident", "RESPONSE"),
+                new XAttribute("rcardinality", "Single"),
+                new XElement("render_fib",
+                    new XElement("response_label",
+                        new XAttribute("ident", "answer")))));
+
             var answers = ShortAnswers.Where(a => !string.IsNullOrWhiteSpace(a)).ToList();
-
-            // Set the first answer as the primary correct response
-            if (answers.Count > 0)
-                UpdateCorrectResponse(root, ns, new List<string> { answers[0] });
-
-            // Write ALL answers to <mapping> with <mapEntry> per QTI 2.2 spec
-            XElement responseDecl = root.Elements(ns + "responseDeclaration")
-                .FirstOrDefault(rd => (string)rd.Attribute("identifier") == "RESPONSE");
-
-            if (responseDecl != null && answers.Count > 0)
-            {
-                // Remove old mapping, rebuild
-                responseDecl.Elements(ns + "mapping").Remove();
-
-                var mapping = new XElement(ns + "mapping",
-                    new XAttribute("defaultValue", "0"));
-                foreach (string answer in answers)
-                {
-                    mapping.Add(new XElement(ns + "mapEntry",
-                        new XAttribute("mapKey", answer.Trim()),
-                        new XAttribute("mappedValue", "2")));
-                }
-                responseDecl.Add(mapping);
-            }
+            RebuildResprocessing(item, answers);
         }
 
-        // Saves numerical-range data to the QTI XML
-        private void SaveNumericalRange(XElement root, XElement itemBody, XNamespace ns)
+        // Saves numerical range: stores [min,max] as the correct value
+        private void SaveNumericalRangeData(XElement item, XElement flow)
         {
-            XElement textEntry = itemBody.Descendants(ns + "textEntryInteraction").FirstOrDefault();
-            if (textEntry == null)
-            {
-                textEntry = new XElement(ns + "textEntryInteraction",
-                    new XAttribute("responseIdentifier", "RESPONSE"));
-                itemBody.Add(textEntry);
-            }
+            // Remove existing response_str
+            flow.Elements().Where(el => el.Name.LocalName == "response_str").Remove();
+
+            // Build render_fib for numeric input
+            flow.Add(new XElement("response_str",
+                new XAttribute("ident", "RESPONSE"),
+                new XAttribute("rcardinality", "Single"),
+                new XElement("render_fib",
+                    new XElement("response_label",
+                        new XAttribute("ident", "answer")))));
 
             string rangeValue = "[" + txtRangeMin.Text.Trim() + "," + txtRangeMax.Text.Trim() + "]";
-            UpdateCorrectResponse(root, ns, new List<string> { rangeValue });
+            RebuildResprocessing(item, new List<string> { rangeValue });
         }
 
-        // Updates the responseDeclaration > correctResponse > value elements
-        private void UpdateCorrectResponse(XElement root, XNamespace ns, List<string> correctValues)
+        // Rebuilds the <resprocessing> element with correct answer conditions
+        private void RebuildResprocessing(XElement item, List<string> correctValues)
         {
-            XElement responseDecl = root.Elements(ns + "responseDeclaration")
-                .FirstOrDefault(rd => (string)rd.Attribute("identifier") == "RESPONSE");
+            // Remove old resprocessing
+            item.Elements().Where(el => el.Name.LocalName == "resprocessing").Remove();
 
-            if (responseDecl == null)
-            {
-                responseDecl = new XElement(ns + "responseDeclaration",
-                    new XAttribute("identifier", "RESPONSE"),
-                    new XAttribute("cardinality", correctValues.Count > 1 ? "multiple" : "single"),
-                    new XAttribute("baseType", "identifier"));
-                XElement itemBody = root.Elements(ns + "itemBody").FirstOrDefault();
-                if (itemBody != null)
-                    itemBody.AddBeforeSelf(responseDecl);
-                else
-                    root.AddFirst(responseDecl);
-            }
+            var resprocessing = new XElement("resprocessing",
+                new XElement("outcomes",
+                    new XElement("decvar",
+                        new XAttribute("varname", "SCORE"),
+                        new XAttribute("vartype", "Decimal"),
+                        new XAttribute("defaultval", "0"))));
 
-            responseDecl.Elements(ns + "correctResponse").Remove();
-
-            var correctResponse = new XElement(ns + "correctResponse");
             foreach (string val in correctValues)
             {
-                correctResponse.Add(new XElement(ns + "value", val));
+                resprocessing.Add(new XElement("respcondition",
+                    new XAttribute("title", "Correct"),
+                    new XElement("conditionvar",
+                        new XElement("varequal",
+                            new XAttribute("respident", "RESPONSE"),
+                            val)),
+                    new XElement("setvar",
+                        new XAttribute("varname", "SCORE"),
+                        new XAttribute("action", "Set"),
+                        "1")));
             }
-            responseDecl.Add(correctResponse);
+
+            item.Add(resprocessing);
         }
 
-        // ----- Load logic -----
+        // ----- Load logic for QTI 1.2 -----
 
-        // Loads the assessment item referenced by Session["QtiCurrentItem"]
+        // Loads the QTI 1.2 assessment item referenced by Session["QtiCurrentItem"]
         private void LoadQuestion()
         {
             string sessionId = (string)Session["QtiSessionId"];
@@ -346,29 +357,47 @@ namespace QTI_Editor.WWW
                 return;
             }
 
+            // Parse compound href for item ident
+            string itemIdent = null;
+            if (href.Contains("#"))
+                itemIdent = href.Split(new[] { '#' }, 2)[1];
+
             try
             {
                 XDocument doc = XDocument.Load(filePath);
-                XElement root = doc.Root;
 
-                // Detect the namespace from the actual document (v2.1 or v2.2)
-                XNamespace ns = DetectQtiNamespace(root);
-                ActiveQtiNs = ns;
+                XElement item = FindItemElement(doc, itemIdent);
+                if (item == null)
+                {
+                    ShowError("No <item> element found in QTI file.");
+                    return;
+                }
 
-                txtTitle.Text = (string)root.Attribute("title") ?? "";
+                // Title from <item title="...">
+                txtTitle.Text = (string)item.Attribute("title") ?? "";
 
-                XElement itemBody = root.Elements(ns + "itemBody").FirstOrDefault();
+                // Find <presentation> and its <flow> wrapper (if present)
+                XElement presentation = item.Elements()
+                    .FirstOrDefault(el => el.Name.LocalName == "presentation");
 
-                // Extract question text from <p> elements AND <prompt> elements
-                string questionText = ExtractQuestionText(itemBody, ns);
+                // The content container is either <flow> inside presentation, or presentation itself
+                XElement contentContainer = null;
+                if (presentation != null)
+                {
+                    XElement flow = presentation.Elements()
+                        .FirstOrDefault(el => el.Name.LocalName == "flow");
+                    contentContainer = flow ?? presentation;
+                }
+
+                // Extract question text from <material><mattext>
+                string questionText = ExtractQuestionText(contentContainer);
                 txtQuestionText.Text = questionText;
 
-                // Detect question type — pass the full itemBody.Value for file-upload detection
-                string fullBodyText = itemBody != null ? itemBody.Value : "";
-                QuestionType qType = DetectQuestionType(itemBody, ns, fullBodyText);
+                // Detect question type from QTI 1.2 elements
+                QuestionType qType = DetectQuestionType(contentContainer, item);
                 lblQuestionType.Text = qType.ToString();
 
-                // Select the type in the dropdown (handle Unknown by defaulting to LongFormEssay)
+                // Select the type in the dropdown
                 if (ddlType.Items.FindByValue(qType.ToString()) != null)
                     ddlType.SelectedValue = qType.ToString();
                 else
@@ -379,15 +408,15 @@ namespace QTI_Editor.WWW
                 // Load type-specific data
                 if (qType == QuestionType.MultipleChoice || qType == QuestionType.MultiSelect)
                 {
-                    LoadChoices(root, itemBody, ns);
+                    LoadChoices(contentContainer, item);
                 }
                 else if (qType == QuestionType.ShortAnswer)
                 {
-                    LoadShortAnswer(root, ns);
+                    LoadShortAnswer(item);
                 }
                 else if (qType == QuestionType.NumericalRange)
                 {
-                    LoadNumericalRange(root, ns);
+                    LoadNumericalRange(item);
                 }
             }
             catch (Exception ex)
@@ -396,60 +425,64 @@ namespace QTI_Editor.WWW
             }
         }
 
-        // Extracts question text from <p> elements in the itemBody and <prompt> elements
-        // inside interactions. Per QTI 2.2 spec, the question text may live in either location.
-        private string ExtractQuestionText(XElement itemBody, XNamespace ns)
+        // Extracts the question prompt text from the first <material><mattext> in the container.
+        // Skips <mattext> elements inside <response_label> (those are answer choices, not the question).
+        private string ExtractQuestionText(XElement container)
         {
-            if (itemBody == null) return "";
+            if (container == null) return "";
 
             var textParts = new List<string>();
 
-            // 1. Collect text from direct <p> children of itemBody
-            foreach (var p in itemBody.Elements(ns + "p"))
+            // Get <material> elements that are direct children of the container
+            // (not inside response_lid/response_label which hold answer text)
+            foreach (var material in container.Elements()
+                .Where(el => el.Name.LocalName == "material"))
             {
-                string pText = p.Value.Trim();
-                if (!string.IsNullOrEmpty(pText))
-                    textParts.Add(pText);
+                var mattext = material.Elements()
+                    .FirstOrDefault(el => el.Name.LocalName == "mattext");
+                if (mattext != null && !string.IsNullOrWhiteSpace(mattext.Value))
+                    textParts.Add(mattext.Value.Trim());
             }
 
-            // 2. Collect text from <prompt> elements inside any interaction
-            //    Per QTI spec, <prompt> is a child of choiceInteraction, orderInteraction, etc.
-            foreach (var prompt in itemBody.Descendants(ns + "prompt"))
-            {
-                string promptText = prompt.Value.Trim();
-                if (!string.IsNullOrEmpty(promptText))
-                    textParts.Add(promptText);
-            }
-
-            // If both exist, prefer <prompt> text if <p> is empty/generic
-            // If only one exists, use that
-            return string.Join("\n", textParts.Distinct());
+            return string.Join("\n", textParts);
         }
 
-        // Loads multiple-choice / multi-select answer data from the QTI XML
-        private void LoadChoices(XElement root, XElement itemBody, XNamespace ns)
+        // Loads MC/MS choices from <response_lid><render_choice><response_label>
+        // and marks correct answers from <resprocessing><respcondition><conditionvar><varequal>
+        private void LoadChoices(XElement container, XElement item)
         {
             var choices = new List<ChoiceItem>();
-            if (itemBody == null) return;
+            if (container == null) return;
 
-            var choiceInteraction = itemBody.Descendants(ns + "choiceInteraction").FirstOrDefault();
-            if (choiceInteraction != null)
+            var renderChoice = container.Descendants()
+                .FirstOrDefault(el => el.Name.LocalName == "render_choice");
+
+            if (renderChoice != null)
             {
-                foreach (var sc in choiceInteraction.Elements(ns + "simpleChoice"))
+                foreach (var label in renderChoice.Elements()
+                    .Where(el => el.Name.LocalName == "response_label"))
                 {
+                    string ident = (string)label.Attribute("ident") ?? "";
+
+                    // Get choice text from <material><mattext>
+                    string choiceText = "";
+                    var mattext = label.Descendants()
+                        .FirstOrDefault(el => el.Name.LocalName == "mattext");
+                    if (mattext != null)
+                        choiceText = mattext.Value.Trim();
+
                     choices.Add(new ChoiceItem
                     {
-                        Identifier = (string)sc.Attribute("identifier") ?? "",
-                        Text = sc.Value.Trim(),
+                        Identifier = ident,
+                        Text = choiceText,
                         IsCorrect = false
                     });
                 }
             }
 
-            // Mark correct answers from responseDeclaration
-            var correctValues = root.Elements(ns + "responseDeclaration")
-                .SelectMany(rd => rd.Elements(ns + "correctResponse"))
-                .SelectMany(cr => cr.Elements(ns + "value"))
+            // Mark correct answers from resprocessing > respcondition > conditionvar > varequal
+            var correctValues = item.Descendants()
+                .Where(el => el.Name.LocalName == "varequal")
                 .Select(v => v.Value.Trim())
                 .ToList();
 
@@ -462,47 +495,30 @@ namespace QTI_Editor.WWW
             BindChoices();
         }
 
-        // Loads short-answer data from the QTI XML
-        // Reads from <mapping> <mapEntry> elements to get all acceptable answers
-        private void LoadShortAnswer(XElement root, XNamespace ns)
+        // Loads short-answer data from <resprocessing> <varequal> elements
+        private void LoadShortAnswer(XElement item)
         {
             var answers = new List<string>();
 
-            // Primary source: <mapping><mapEntry> which holds all acceptable answers
-            var mapEntries = root.Elements(ns + "responseDeclaration")
-                .Where(rd => (string)rd.Attribute("identifier") == "RESPONSE")
-                .SelectMany(rd => rd.Elements(ns + "mapping"))
-                .SelectMany(m => m.Elements(ns + "mapEntry"))
-                .Select(me => ((string)me.Attribute("mapKey") ?? "").Trim())
-                .Where(k => !string.IsNullOrEmpty(k))
+            // Read correct answers from <respcondition><conditionvar><varequal>
+            var varEquals = item.Descendants()
+                .Where(el => el.Name.LocalName == "varequal")
+                .Select(v => v.Value.Trim())
+                .Where(v => !string.IsNullOrEmpty(v))
                 .ToList();
 
-            if (mapEntries.Count > 0)
-            {
-                answers = mapEntries;
-            }
-            else
-            {
-                // Fallback: read from <correctResponse><value>
-                string correctValue = root.Elements(ns + "responseDeclaration")
-                    .SelectMany(rd => rd.Elements(ns + "correctResponse"))
-                    .SelectMany(cr => cr.Elements(ns + "value"))
-                    .Select(v => v.Value.Trim())
-                    .FirstOrDefault() ?? "";
-                if (!string.IsNullOrEmpty(correctValue))
-                    answers.Add(correctValue);
-            }
+            if (varEquals.Count > 0)
+                answers = varEquals;
 
             ShortAnswers = answers;
             BindShortAnswers();
         }
 
-        // Loads numerical-range [min,max] from the QTI XML
-        private void LoadNumericalRange(XElement root, XNamespace ns)
+        // Loads numerical-range [min,max] from <varequal> in resprocessing
+        private void LoadNumericalRange(XElement item)
         {
-            string correctValue = root.Elements(ns + "responseDeclaration")
-                .SelectMany(rd => rd.Elements(ns + "correctResponse"))
-                .SelectMany(cr => cr.Elements(ns + "value"))
+            string correctValue = item.Descendants()
+                .Where(el => el.Name.LocalName == "varequal")
                 .Select(v => v.Value.Trim())
                 .FirstOrDefault() ?? "";
 
@@ -516,33 +532,38 @@ namespace QTI_Editor.WWW
 
         // ----- Shared utilities -----
 
-        // Detects whether the document uses QTI v2.2 or v2.1 namespace.
-        // Per spec: "Documents with a namespace of ...v2p1 must still be supported."
-        private XNamespace DetectQtiNamespace(XElement root)
+        // Finds the target <item> element within the document.
+        // If itemIdent is provided, matches by ident attribute.
+        // Otherwise returns the first <item> element found.
+        private XElement FindItemElement(XDocument doc, string itemIdent)
         {
-            if (root == null) return QtiNs22;
+            if (!string.IsNullOrEmpty(itemIdent))
+            {
+                return doc.Descendants()
+                    .FirstOrDefault(el => el.Name.LocalName == "item"
+                        && (string)el.Attribute("ident") == itemIdent);
+            }
 
-            string rootNs = root.Name.NamespaceName;
-
-            if (rootNs == QtiNs21.NamespaceName)
-                return QtiNs21;
-
-            // Default to v2.2 (also handles no-namespace documents)
-            return QtiNs22;
+            return doc.Descendants()
+                .FirstOrDefault(el => el.Name.LocalName == "item");
         }
 
-        // Resolves the physical file path for a given session + href
+        // Resolves the physical file path for a given session + href.
+        // Strips the "#IDENT" fragment from compound hrefs used for multi-item files.
         private string ResolveItemPath(string sessionId, string href)
         {
+            // Strip item fragment if present (QTI 1.2 compound href: "file.xml#IDENT")
+            string filePart = href.Contains("#") ? href.Split(new[] { '#' }, 2)[0] : href;
+
             string extractDir = Server.MapPath("~/cache/" + sessionId + "/extracted");
-            string filePath = System.IO.Path.Combine(extractDir, href);
+            string filePath = System.IO.Path.Combine(extractDir, filePart);
 
             if (System.IO.File.Exists(filePath))
                 return filePath;
 
             // Search subdirectories
             string[] found = System.IO.Directory.GetFiles(
-                extractDir, System.IO.Path.GetFileName(href), System.IO.SearchOption.AllDirectories);
+                extractDir, System.IO.Path.GetFileName(filePart), System.IO.SearchOption.AllDirectories);
             return found.Length > 0 ? found[0] : null;
         }
 
@@ -610,44 +631,55 @@ namespace QTI_Editor.WWW
             lblError.Visible = true;
         }
 
-        // Detects the question type from the QTI XML structure
-        private QuestionType DetectQuestionType(XElement itemBody, XNamespace ns, string bodyText)
+        // Detects the question type from QTI 1.2 XML structure
+        private QuestionType DetectQuestionType(XElement container, XElement item)
         {
-            if (IsFileUploadQuestion(bodyText))
+            // Check for file upload by body text
+            string fullText = item != null ? item.Value : "";
+            if (IsFileUploadQuestion(fullText))
                 return QuestionType.FileUpload;
 
-            if (itemBody == null)
+            if (container == null)
                 return QuestionType.LongFormEssay;
 
-            XElement choiceInteraction = itemBody.Descendants(ns + "choiceInteraction").FirstOrDefault();
-            XElement textEntry = itemBody.Descendants(ns + "textEntryInteraction").FirstOrDefault();
-            XElement extendedText = itemBody.Descendants(ns + "extendedTextInteraction").FirstOrDefault();
-            XElement uploadInteraction = itemBody.Descendants(ns + "uploadInteraction").FirstOrDefault();
+            // QTI 1.2 element detection
+            XElement responseLid = container.Descendants()
+                .FirstOrDefault(el => el.Name.LocalName == "response_lid");
+            XElement responseStr = container.Descendants()
+                .FirstOrDefault(el => el.Name.LocalName == "response_str");
+            XElement renderChoice = container.Descendants()
+                .FirstOrDefault(el => el.Name.LocalName == "render_choice");
+            XElement renderFib = container.Descendants()
+                .FirstOrDefault(el => el.Name.LocalName == "render_fib");
 
-            if (extendedText != null)
-                return QuestionType.LongFormEssay;
-
-            bool hasAnyInteraction = choiceInteraction != null || textEntry != null || uploadInteraction != null;
+            bool hasAnyInteraction = responseLid != null || responseStr != null;
 
             if (!hasAnyInteraction)
                 return QuestionType.LongFormEssay;
 
-            if (uploadInteraction != null)
-                return QuestionType.FileUpload;
-
-            if (textEntry != null && HasNumericalRangeResponse(itemBody.Document?.Root, ns))
-                return QuestionType.NumericalRange;
-
-            if (textEntry != null)
-                return QuestionType.ShortAnswer;
-
-            if (choiceInteraction != null)
+            // Multiple choice / multi-select: response_lid with render_choice
+            if (responseLid != null && renderChoice != null)
             {
-                string maxChoicesAttr = (string)choiceInteraction.Attribute("maxChoices");
-                int maxChoices = 1;
-                int.TryParse(maxChoicesAttr, out maxChoices);
+                string cardinality = ((string)responseLid.Attribute("rcardinality") ?? "Single").Trim();
+                return cardinality.Equals("Multiple", StringComparison.OrdinalIgnoreCase)
+                    ? QuestionType.MultiSelect
+                    : QuestionType.MultipleChoice;
+            }
 
-                return maxChoices > 1 ? QuestionType.MultiSelect : QuestionType.MultipleChoice;
+            // Text input: response_str with render_fib
+            if (responseStr != null && renderFib != null)
+            {
+                // Check for numerical range in resprocessing
+                if (HasNumericalRangeResponse(item))
+                    return QuestionType.NumericalRange;
+
+                // Distinguish essay from short answer by rows attribute
+                string rowsAttr = (string)renderFib.Attribute("rows");
+                int rows = 0;
+                if (!string.IsNullOrEmpty(rowsAttr))
+                    int.TryParse(rowsAttr, out rows);
+
+                return rows > 1 ? QuestionType.LongFormEssay : QuestionType.ShortAnswer;
             }
 
             return QuestionType.Unknown;
@@ -658,14 +690,12 @@ namespace QTI_Editor.WWW
             return !string.IsNullOrEmpty(bodyText) && bodyText.IndexOf("Upload a file", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
-        private bool HasNumericalRangeResponse(XElement assessmentItem, XNamespace ns)
+        private bool HasNumericalRangeResponse(XElement item)
         {
-            if (assessmentItem == null) return false;
+            if (item == null) return false;
 
-            string correctValue = assessmentItem
-                .Elements(ns + "responseDeclaration")
-                .SelectMany(rd => rd.Elements(ns + "correctResponse"))
-                .SelectMany(cr => cr.Elements(ns + "value"))
+            string correctValue = item.Descendants()
+                .Where(el => el.Name.LocalName == "varequal")
                 .Select(v => v.Value.Trim())
                 .FirstOrDefault();
 
