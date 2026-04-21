@@ -59,9 +59,16 @@ namespace QTI_Editor.WWW
 
             if (manifestFiles.Length == 0)
             {
-                result.IsValid = false;
-                result.Message = "Validation failed: imsmanifest.xml was not found.";
-                return result;
+                // Fallback: look for bare QTI XML files (no manifest) and generate one.
+                // A bare QTI XML has <questestinterop> as its root element.
+                string generatedManifest = TryGenerateManifestFromBareXml(extractedFolderPath);
+                if (generatedManifest == null)
+                {
+                    result.IsValid = false;
+                    result.Message = "Validation failed: imsmanifest.xml was not found and no bare QTI XML files were detected.";
+                    return result;
+                }
+                manifestFiles = new[] { generatedManifest };
             }
 
             // Simplified: assign directly to result.ManifestPath (#22)
@@ -172,6 +179,67 @@ namespace QTI_Editor.WWW
             result.Message = "QTI validation passed: manifest valid with "
                 + qtiResources.Count + " QTI resource(s) verified.";
             return result;
+        }
+
+        // Scans the extracted folder for bare QTI XML files (root element = questestinterop)
+        // and generates a synthetic imsmanifest.xml referencing each one.
+        // Returns the path to the generated manifest, or null if no QTI XML files were found.
+        private string TryGenerateManifestFromBareXml(string extractedFolderPath)
+        {
+            // Find all .xml files in the extracted folder
+            string[] xmlFiles = Directory.GetFiles(extractedFolderPath, "*.xml", SearchOption.AllDirectories);
+            var qtiFiles = new System.Collections.Generic.List<string>();
+
+            foreach (string xmlFile in xmlFiles)
+            {
+                try
+                {
+                    XDocument doc = XDocument.Load(xmlFile);
+                    if (doc.Root != null &&
+                        doc.Root.Name.LocalName.Equals("questestinterop", StringComparison.OrdinalIgnoreCase))
+                    {
+                        qtiFiles.Add(xmlFile);
+                    }
+                }
+                catch
+                {
+                    // Skip files that can't be parsed as XML
+                }
+            }
+
+            if (qtiFiles.Count == 0)
+                return null;
+
+            // Build a synthetic imsmanifest.xml
+            XNamespace cpNs = "http://www.imsglobal.org/xsd/imscp_v1p1";
+            var resources = new XElement(cpNs + "resources");
+
+            for (int i = 0; i < qtiFiles.Count; i++)
+            {
+                // Use a path relative to the extracted folder
+                string relativePath = qtiFiles[i].Substring(extractedFolderPath.TrimEnd('\\').Length + 1)
+                    .Replace("\\", "/");
+
+                string resId = "RES_" + (i + 1);
+                resources.Add(new XElement(cpNs + "resource",
+                    new XAttribute("identifier", resId),
+                    new XAttribute("type", "imsqti_xmlv1p2"),
+                    new XAttribute("href", relativePath),
+                    new XElement(cpNs + "file",
+                        new XAttribute("href", relativePath))));
+            }
+
+            var manifest = new XDocument(
+                new XDeclaration("1.0", "UTF-8", null),
+                new XElement(cpNs + "manifest",
+                    new XAttribute("identifier", "AUTO_GENERATED_MANIFEST"),
+                    new XElement(cpNs + "organizations"),
+                    resources));
+
+            string manifestPath = Path.Combine(extractedFolderPath, "imsmanifest.xml");
+            manifest.Save(manifestPath);
+
+            return manifestPath;
         }
     }
 }
